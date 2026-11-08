@@ -1,6 +1,6 @@
 # Expo: demo script, submission text, curveballs
 
-Draft. URLs live in `LIVE.md`. Before every run: hit **Reset** on the kitchen page (board back to tables 7, 2, 9, no 86s), load the kitchen page once to warm the sandbox, and have the order page open on a phone (`BASE/?table=4`). For a projector or the Loom, add `&stage` to the kitchen URL (or press **S**) for bigger type.
+Draft. URLs live in `LIVE.md`. Once before the demo (lasts 24h): open the kitchen URL on the laptop and the order URL on your phone, and click through Daytona's one-time preview warning on each. Judges who scan the QR will see it too and tap Continue once; mention it if they hesitate. Before every run: hit **Reset** on the kitchen page (board back to tables 7, 2, 9, no 86s), load the kitchen page once to warm the sandbox, and have the order page open on a phone (`BASE/?table=4`). For a projector or the Loom, add `&stage` to the kitchen URL (or press **S**) for bigger type.
 
 ## 1. Demo / Loom script (~90s)
 
@@ -58,4 +58,5 @@ All of these passed against the live agent (PR #14).
 | "Salmon's back" after an 86 | Restocks it; guests already messaged keep their offer | |
 | "Table 2 is out" / "bump 2" | Clears table 2 from the board | |
 | Venue wifi drops or Expo goes silent | Reload the kitchen page and click Start Expo again (it connects over websocket by default) | Order from a second laptop tab |
+| Judge's phone shows a Daytona warning page after scanning | Tap Continue (one time only), then the order page loads | Order from your phone instead |
 | Daytona sandbox is cold or slow | Load the kitchen page once before going on | Wait a beat, re-ask |
