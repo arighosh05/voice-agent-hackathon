@@ -139,7 +139,7 @@
       <ul class="lines" id="st-items"></ul>
     </div>
     <button class="again" id="again">Order something else</button>
-    <p class="foot">Powered by Expo · voice expediting for kitchens</p>
+    <p class="foot">Powered by CallOut · voice expediting for kitchens</p>
   </section>
 </main>
 
@@ -239,7 +239,7 @@ function render(o) {
   const at = { new: 1, flagged: 1, fired: 2, done: 3 }[o.status] ?? 1;
   const steps = [
     ['Order placed', placedAt ? hhmm(placedAt) : ''],
-    ['Kitchen notified', 'Expo read your order out to the cook'],
+    ['Kitchen notified', 'CallOut read your order out to the line chef'],
     ['Cooking', 'On the grill'],
     ['Ready', 'Brought to your table'],
   ];

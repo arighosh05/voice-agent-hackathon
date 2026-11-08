@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Expo · Kitchen board</title>
+<title>CallOut · Kitchen board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -181,7 +181,7 @@
 </head>
 <body data-voice="off">
 <nav class="side">
-  <div class="ws"><div class="logo">E</div><div><b>Expo</b><small>Flat Top Burgers</small></div></div>
+  <div class="ws"><div class="logo">C</div><div><b>CallOut</b><small>Flat Top Burgers</small></div></div>
   <div class="navs">
     <div class="lbl">Service</div>
     <a class="on" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg>Kitchen board<span class="k" id="nav-open">0</span></a>
@@ -193,7 +193,7 @@
     <div class="hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>Voice agent</div>
     <div class="st"><div class="wave"><i></i><i></i><i></i><i></i><i></i></div><span id="state">not connected</span></div>
     <input id="agent" placeholder="ElevenLabs agent ID" spellcheck="false">
-    <button class="btn" id="start">Start Expo</button>
+    <button class="btn" id="start">Start CallOut</button>
     <div class="meta">ElevenLabs · Daytona</div>
   </div>
 </nav>
@@ -216,7 +216,7 @@
       </div>
       <section id="board"></section>
     </div>
-    <aside><div class="ah"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Live transcript<span>Expo ⇄ Cook</span></div><div id="log"></div></aside>
+    <aside><div class="ah"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Live transcript<span>CallOut ⇄ Line chef</span></div><div id="log"></div></aside>
   </div>
 </div>
 
@@ -277,7 +277,7 @@ function flush() {
   const text = queue.shift();
   convo.sendUserMessage(`[NEW TICKET] ${text}`);
   turn = { at: performance.now(), what: 'Announced' };
-  log('', 'ticket sent to Expo: ' + text, 'sys');
+  log('', 'order sent to CallOut: ' + text, 'sys');
 }
 setInterval(flush, 300);
 
@@ -285,11 +285,11 @@ function announce(callout) {
   chime();
   // Always queue: tickets that land before Start get called out once Expo connects.
   queue.push(callout);
-  if (!convo) log('', 'new ticket, Expo will call it when started: ' + callout, 'sys');
+  if (!convo) log('', 'new order, CallOut will announce it when started: ' + callout, 'sys');
 }
 
 $('#start').onclick = async () => {
-  if (convo) { await convo.endSession(); convo = null; $('#start').textContent = 'Start Expo'; return; }
+  if (convo) { await convo.endSession(); convo = null; $('#start').textContent = 'Start CallOut'; return; }
   const agentId = $('#agent').value.trim();
   if (!agentId) { alert('Paste the ElevenLabs agent ID first'); return; }
   store.set('expo-agent', agentId);
@@ -300,7 +300,7 @@ $('#start').onclick = async () => {
       agentId,
       connectionType: params.get('conn') === 'webrtc' ? 'webrtc' : 'websocket',  // websocket is the tested path
       onConnect: () => { $('#state').textContent = 'listening'; $('#state').className = 'on'; },
-      onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start Expo'; },
+      onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start CallOut'; },
       onModeChange: (m) => {
         mode = m.mode; $('#state').textContent = m.mode;
         if (m.mode === 'speaking' && turn) {
@@ -322,7 +322,7 @@ $('#start').onclick = async () => {
         const text = m.message || '';
         if (text.startsWith('[NEW TICKET]')) return;
         if (!(m.source === 'ai' || m.role === 'agent')) turn = { at: performance.now(), what: 'Replied' };
-        log(m.source === 'ai' || m.role === 'agent' ? 'EXPO' : 'MARCO', text, m.source === 'ai' || m.role === 'agent' ? 'agent' : '');
+        log(m.source === 'ai' || m.role === 'agent' ? 'CALLOUT' : 'LINE CHEF', text, m.source === 'ai' || m.role === 'agent' ? 'agent' : '');
       },
       onError: (e) => log('', 'error: ' + (e?.message || e), 'sys'),
     });
