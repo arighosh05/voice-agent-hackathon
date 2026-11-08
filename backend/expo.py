@@ -308,6 +308,12 @@ def send_offer(req: OfferIn):
         if swap in eighty_sixed or swap == name:
             return {"summary": f"Can't offer {swap}, it's sold out. Ask the chef for another swap.", "ok": False}
     with _lock:
+        waiting = {o["pending"] for o in _open() if o.get("pending")}
+        if name not in waiting and len(waiting) == 1:
+            # the agent named the declined swap (or anything else) but only one item is waiting
+            name = waiting.pop()
+            if swap == name:
+                return {"summary": f"Can't offer {swap}, it's sold out. Ask the chef for another swap.", "ok": False}
         hit = []
         for o in _open():
             if o.get("pending") == name:
@@ -418,7 +424,7 @@ def guest_reply(req: ReplyIn):
             o["pending"] = item  # the chef can send a new offer
             for it in o["items"]:
                 it.pop("swap_to", None)
-            text = f"Table {o['table']} said no to {what}. What should I offer them instead?"
+            text = f"Table {o['table']} said no to {what} for their {item}. What should I offer them instead?"
         o["callout"] = _callout(o)
         o["changed"] = time.time()
         events.append({"id": (events[-1]["id"] + 1) if events else 1, "text": text, "table": o["table"]})
