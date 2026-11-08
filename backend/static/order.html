@@ -129,6 +129,21 @@
   .lk .go { margin-top:8px; font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:4px; }
   .empty-lk { text-align:center; color:var(--muted); padding:24px 0; }
   .notice.wait { border-color:#fde68a; box-shadow:0 4px 16px rgba(217,119,6,.08); }
+  .notice .reply { display:none; padding:4px 16px 16px; }
+  .notice .reply.show { display:block; }
+  .notice .reply p { margin:0 0 10px; font-size:13px; font-weight:600; color:var(--ink, #18181b); }
+  .notice .rb { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .notice .rb button { font:inherit; font-size:14px; font-weight:600; height:44px; border-radius:10px; cursor:pointer; transition:background .15s, opacity .15s; }
+  .notice .rb .yes { background:#18181b; color:#fff; border:1px solid #18181b; }
+  .notice .rb .yes:hover { background:#27272a; }
+  .notice .rb .no { background:#fff; color:#3f3f46; border:1px solid #e4e4e7; }
+  .notice .rb .no:hover { background:#fafafa; }
+  .notice .rb button:disabled { opacity:.5; cursor:default; }
+  .notice .replied { display:none; margin:4px 16px 16px; padding:10px 12px; border-radius:10px; font-size:13px; font-weight:500; }
+  .notice .replied.ok { display:block; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+  .notice .replied.wait { display:block; background:#fffbeb; color:#b45309; border:1px solid #fde68a; }
+  .notice.done { border-color:#bbf7d0; box-shadow:0 4px 16px rgba(22,163,74,.08); }
+  .notice.done .nh { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
   .notice.wait .nh { background:#fffbeb; border-color:#fde68a; color:#b45309; }
   .foot { margin-top:20px; text-align:center; color:var(--subtle); font-size:12px; }
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
@@ -161,6 +176,11 @@
       <div class="nh"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Update from the kitchen</div>
       <div class="nb" id="notice-msg"></div>
       <ul class="lines" id="notice-lines"></ul>
+      <div class="reply" id="notice-reply">
+        <p>Does this work for you?</p>
+        <div class="rb"><button type="button" class="no" id="reply-no">No, something else</button><button type="button" class="yes" id="reply-yes">Yes, sounds good</button></div>
+      </div>
+      <div class="replied" id="notice-replied"></div>
     </div>
     <div class="seat" id="seat"><div class="num" id="seat-n"></div><div><b id="seat-t"></b><span>We'll bring your food there. Use this number to check your order.</span></div></div>
     <div class="card">
@@ -237,7 +257,21 @@ async function loadMenu() {
   }
 }
 
-let pollTimer = null, alerted = false, placedAt = null;
+let pollTimer = null, alerted = false, placedAt = null, curId = null, replying = false;
+async function sendReply(accept) {
+  if (!curId || replying) return;
+  replying = true;
+  document.querySelectorAll('.rb button').forEach(b => b.disabled = true);
+  try {
+    await fetch('reply', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ order_id: curId, accept }) });
+    const o = await (await fetch('order/' + curId)).json();
+    if (o && o.items) render(o, o.status === 'flagged' ? await soldOut() : []);
+  } catch (e) {}
+  replying = false;
+  document.querySelectorAll('.rb button').forEach(b => b.disabled = false);
+}
+document.getElementById('reply-yes').onclick = () => sendReply(true);
+document.getElementById('reply-no').onclick = () => sendReply(false);
 
 $('#go').onclick = async () => {
   $('#go').disabled = true; $('#err').textContent = '';
@@ -362,8 +396,9 @@ function render(o, out = []) {
   $('#st-items').innerHTML = o.items.map(i => {
     const out = i.name === gone;
     return `<li class="${out ? 'gone' : ''}"><span class="em">${(LOOK[i.name] || ['🍽️'])[0]}</span><div class="grow"><div class="nm">${esc(i.name)}</div>${
+      i.was ? `<div class="md" style="color:#15803d;font-weight:500">Swapped in for the ${esc(i.was)} · free</div>` : ''}${
       i.mods.length ? `<div class="md">${i.mods.map(esc).join(' · ')}</div>` : ''}${
-      out && swapTo ? `<div class="md" style="color:#15803d;font-weight:500">→ ${(LOOK[swapTo] || [''])[0]} Swapped for ${esc(swapTo)}</div>` : ''}</div>${out ? '<span class="badge red">Sold out</span>' : ''}</li>`;
+      out && swapTo && !(o.offer && o.offer.status && o.offer.status !== 'accepted') ? `<div class="md" style="color:#15803d;font-weight:500">→ ${(LOOK[swapTo] || [''])[0]} Swapped for ${esc(swapTo)}</div>` : ''}</div>${out ? '<span class="badge red">Sold out</span>' : ''}</li>`;
   }).join('');
 
   if (msg) {
@@ -371,15 +406,23 @@ function render(o, out = []) {
     const swap = (msg.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1];
     const comp = (msg.match(/\b(an? [a-z ]+?) is on us/i) || [])[1];
     $('#notice-lines').innerHTML =
-      (swap ? `<li><span class="em">${(LOOK[swap] || ['🔁'])[0]}</span><div class="grow"><div class="nm">Swap: ${esc(swap)}</div><div class="md">Instead of the ${esc(gone || 'item')}</div></div><span class="price">$0.00</span></li>` : '') +
+      (swap ? `<li><span class="em">${(LOOK[swap] || ['🔁'])[0]}</span><div class="grow"><div class="nm">Swap: ${esc(swap)}</div><div class="md">Instead of the ${esc(gone || (o.offer && o.offer.item) || 'item')}</div></div><span class="price">$0.00</span></li>` : '') +
       (comp ? `<li><span class="em">🥤</span><div class="grow"><div class="nm" style="text-transform:none">${esc(comp[0].toUpperCase() + comp.slice(1))}</div><div class="md">On the house</div></div><span class="price">Free</span></li>` : '');
+    const ost = o.offer && o.offer.status;
+    $('#notice-reply').classList.toggle('show', ost === 'sent');
+    const rd = $('#notice-replied');
+    rd.className = 'replied' + (ost === 'accepted' ? ' ok' : ost === 'declined' ? ' wait' : '');
+    rd.textContent = ost === 'accepted' ? '✓ You said yes. The kitchen is on it.' : ost === 'declined' ? "You said no. Waiting for the kitchen's next offer…" : '';
     $('#notice').classList.remove('wait');
+    $('#notice').classList.toggle('done', ost === 'accepted');
+    $('#notice-lines').style.display = ost === 'declined' ? 'none' : '';
     $('#notice').classList.add('show');
     if (!alerted) { alerted = true; try { navigator.vibrate && navigator.vibrate([100, 60, 100]); } catch {} window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
 }
 
 async function poll(id) {
+  curId = id;
   try {
     const o = await (await fetch('order/' + id)).json();
     if (o && o.items) render(o, o.status === 'flagged' ? await soldOut() : []);
