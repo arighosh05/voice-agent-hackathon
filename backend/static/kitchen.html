@@ -309,16 +309,16 @@ function chime() {
 function flush() {
   if (!convo || mode === 'speaking' || !queue.length) return;
   const text = queue.shift();
-  convo.sendUserMessage(`[NEW TICKET] ${text}`);
+  convo.sendUserMessage(text);
   turn = { at: performance.now(), what: 'Announced' };
-  log('', 'order sent to CallOut: ' + text, 'sys');
+  log('', (text.startsWith('[GUEST REPLY]') ? 'guest reply sent to CallOut: ' : 'order sent to CallOut: ') + text.replace(/^\[[A-Z ]+\] /, ''), 'sys');
 }
 setInterval(flush, 300);
 
 function announce(callout) {
   chime();
   // Always queue: tickets that land before Start get called out once Expo connects.
-  queue.push(callout);
+  queue.push(`[NEW TICKET] ${callout}`);
   if (!convo) log('', 'new order, CallOut will announce it when started: ' + callout, 'sys');
 }
 
@@ -367,7 +367,7 @@ $('#start').onclick = async () => {
       },
       onMessage: (m) => {
         const text = m.message || '';
-        if (text.startsWith('[NEW TICKET]')) return;
+        if (text.startsWith('[NEW TICKET]') || text.startsWith('[GUEST REPLY]')) return;
         if (!(m.source === 'ai' || m.role === 'agent')) turn = { at: performance.now(), what: 'Replied' };
         log(m.source === 'ai' || m.role === 'agent' ? 'CALLOUT' : 'LINE CHEF', text, m.source === 'ai' || m.role === 'agent' ? 'agent' : '');
       },
@@ -456,11 +456,15 @@ function render(orders, out = [], doneList = []) {
   $('#s-notified').textContent = orders.filter(o => o.message).length;
 }
 
+let lastEvent = null;
 async function poll() {
   try {
     const d = await (await fetch('orders')).json();
     if (seen === null) seen = new Set(d.orders.map(o => o.id)); // don't call out what's already on the board
     for (const o of d.orders) if (!seen.has(o.id)) { seen.add(o.id); announce(o.callout); }
+    const ev = d.events || [];  // guest Yes/No replies to an offer: CallOut reads them to the chef
+    if (lastEvent === null) lastEvent = ev.length ? ev[ev.length - 1].id : 0;
+    for (const e of ev) if (e.id > lastEvent) { lastEvent = e.id; chime(); queue.push(`[GUEST REPLY] ${e.text}`); }
     render(d.orders, d.eighty_sixed, d.done);
     $('#out').textContent = d.eighty_sixed.length ? 'Sold out: ' + d.eighty_sixed.join(', ') : '';
   } catch (e) {}
