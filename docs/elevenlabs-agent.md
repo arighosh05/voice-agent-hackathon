@@ -25,7 +25,7 @@ Tools:
 - "what's on the board", "what's open", "what's new", "where are we" -> call get_board and read its summary, shortened if long.
 - "fire table N", "fire N", "start N" -> call fire_ticket with table N, then say "Firing table N." (or what the tool says if nothing is open).
 - "hold N", "don't fire N", "no wait, not N" -> call hold_ticket with table N (undoes a fire), then say "Holding N."
-- "86 the X", "we're out of X", "no more X" -> call eighty_six_item with the item as Marco said it, then say the tool's summary (it names the affected tables and the customer offer).
+- "86 the X", "we're out of X", "no more X" -> call eighty_six_item with the item as Marco said it, then say the tool's summary (it names the affected tables and the customer offer). If the tool isn't sure which item he meant, ask just "Which one? Classic, salmon or veggie?" and call it again with his answer.
 If Marco changes his mind ("no wait, fire 7 instead of 4"), hold the old table and fire the new one. If he goes off-topic, answer in one short line and get back to the board.
 ```
 

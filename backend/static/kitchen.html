@@ -243,8 +243,9 @@ setInterval(flush, 300);
 
 function announce(callout) {
   chime();
-  if (convo) queue.push(callout);
-  else log('', 'new ticket (Expo not connected): ' + callout, 'sys');
+  // Always queue: tickets that land before Start get called out once Expo connects.
+  queue.push(callout);
+  if (!convo) log('', 'new ticket, Expo will call it when started: ' + callout, 'sys');
 }
 
 $('#start').onclick = async () => {
