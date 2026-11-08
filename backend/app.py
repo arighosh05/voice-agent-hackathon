@@ -57,7 +57,13 @@ def run(req: RunRequest, x_tool_secret: str | None = Header(default=None)):
     if secret and x_tool_secret != secret:
         raise HTTPException(status_code=401, detail="bad secret")
     t0 = time.time()
-    resp = sandbox().process.code_run(req.code)
+    sb = sandbox()
+    try:
+        resp = sb.process.code_run(req.code)
+    except Exception:
+        # Likely auto-stopped after idle: start it again and retry once.
+        sb.start()
+        resp = sb.process.code_run(req.code)
     return {
         "exit_code": resp.exit_code,
         "output": (resp.result or "")[:2000],
