@@ -14,14 +14,13 @@ from pydantic import BaseModel
 
 load_dotenv()
 app = FastAPI()
-daytona = Daytona()  # reads DAYTONA_API_KEY from env
 _sandbox = None  # reuse one warm sandbox to keep voice latency low
 
 
 def sandbox():
     global _sandbox
     if _sandbox is None:
-        _sandbox = daytona.create()
+        _sandbox = Daytona().create()  # reads DAYTONA_API_KEY from env
     return _sandbox
 
 
