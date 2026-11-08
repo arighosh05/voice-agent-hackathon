@@ -175,8 +175,9 @@ def board():
     parts = []
     for o in tickets:
         mins = int((time.time() - o["created"]) // 60)
+        age = "just in" if mins < 1 else f"{mins} min"
         tag = {"new": "", "fired": " (fired)", "flagged": " (86'd item, customer notified)"}[o["status"]]
-        parts.append(f"table {o['table']}{tag}, {mins} min: " + "; ".join(_say_item(i) for i in o["items"]))
+        parts.append(f"table {o['table']}{tag}, {age}: " + "; ".join(_say_item(i) for i in o["items"]))
     return {"summary": f"{len(tickets)} open. " + ". ".join(parts) + ".",
             "tickets": [{"table": o["table"], "status": o["status"], "callout": o["callout"]} for o in tickets]}
 
@@ -190,6 +191,17 @@ def fire(req: FireIn):
                 o["status"] = "fired"
                 return {"summary": f"Fired table {req.table}.", "ok": True}
     return {"summary": f"No open ticket for table {req.table}.", "ok": False}
+
+
+@router.post("/hold")
+def hold(req: FireIn):
+    """Agent tool: undo a fire (Marco changed his mind)."""
+    with _lock:
+        for o in sorted(_open(), key=lambda o: -o["created"]):
+            if o["table"] == req.table and o["status"] == "fired":
+                o["status"] = "flagged" if o["message"] else "new"
+                return {"summary": f"Holding table {req.table}.", "ok": True}
+    return {"summary": f"Table {req.table} wasn't fired.", "ok": False}
 
 
 @router.post("/86")
