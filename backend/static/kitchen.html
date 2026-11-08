@@ -60,6 +60,16 @@
   #start:hover { background:#27272a; }
   body.live #start { background:var(--card); color:var(--fg2); border-color:var(--line2); }
   body.live #agent { display:none; }
+  #mute { display:none; width:100%; }
+  body.live #mute, body.muted #mute { display:inline-flex; }
+  body.muted #mute { background:#fef2f2; border-color:#fecaca; color:#b91c1c; font-weight:600; }
+  .muted-badge { display:none; align-items:center; gap:5px; height:20px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:600; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; margin-left:auto; }
+  body.muted .muted-badge { display:none; }
+  body.muted .wave i { background:var(--faint) !important; animation:none !important; height:4px !important; }
+  body.muted #state { font-size:0 !important; }
+  body.muted #state::after { content:"Mic muted"; font-size:14px; color:#b91c1c; }
+  .t .foot.wait { color:#b45309; }
+  .t .foot.wait svg { color:#d97706; }
 
   /* main */
   .main { display:flex; flex-direction:column; min-width:0; min-height:0; }
@@ -190,10 +200,11 @@
   </div>
   <div class="grow"></div>
   <div class="agent">
-    <div class="hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>Voice agent</div>
+    <div class="hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>Voice agent<span class="muted-badge">Mic muted</span></div>
     <div class="st"><div class="wave"><i></i><i></i><i></i><i></i><i></i></div><span id="state">not connected</span></div>
     <input id="agent" placeholder="ElevenLabs agent ID" spellcheck="false">
     <button class="btn" id="start">Start CallOut</button>
+    <button class="btn" id="mute" title="Mute or unmute your mic (M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg><span id="mute-l">Mute mic</span><span class="k mono" style="font-size:11px;color:var(--faint)">M</span></button>
     <div class="meta">ElevenLabs · Daytona</div>
   </div>
 </nav>
@@ -288,6 +299,19 @@ function announce(callout) {
   if (!convo) log('', 'new order, CallOut will announce it when started: ' + callout, 'sys');
 }
 
+// Mic mute: lets the line chef talk to the room without CallOut hearing it.
+let muted = false;
+function setMuted(on) {
+  muted = on;
+  try { if (convo) convo.setMicMuted(on); } catch (e) { log('', 'mute failed: ' + (e?.message || e), 'sys'); }
+  document.body.classList.toggle('muted', on);
+  $('#mute-l').textContent = on ? 'Unmute mic' : 'Mute mic';
+}
+$('#mute').onclick = () => { if (convo) setMuted(!muted); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName !== 'INPUT' && (e.key === 'm' || e.key === 'M') && convo) setMuted(!muted);
+});
+
 $('#start').onclick = async () => {
   if (convo) { await convo.endSession(); convo = null; $('#start').textContent = 'Start CallOut'; return; }
   const agentId = $('#agent').value.trim();
@@ -299,8 +323,8 @@ $('#start').onclick = async () => {
     convo = await Conversation.startSession({
       agentId,
       connectionType: params.get('conn') === 'webrtc' ? 'webrtc' : 'websocket',  // websocket is the tested path
-      onConnect: () => { $('#state').textContent = 'listening'; $('#state').className = 'on'; },
-      onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start CallOut'; },
+      onConnect: () => { setMuted(false); $('#state').textContent = 'listening'; $('#state').className = 'on'; },
+      onDisconnect: () => { convo = null; setMuted(false); $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start CallOut'; },
       onModeChange: (m) => {
         mode = m.mode; $('#state').textContent = m.mode;
         if (m.mode === 'speaking' && turn) {
@@ -367,7 +391,9 @@ function render(orders, out = []) {
         <ul>${o.items.map(i => { const x = o.status === 'flagged' && out.includes(i.name);
           return `<li class="${x ? 'out' : ''}"><span class="em">${EM[i.name] || '🍽️'}</span><div><div class="nm">${esc(i.name)}</div>${
             i.mods.length ? `<div class="mods">${i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}</div></li>`; }).join('')}</ul>
-        ${o.status === 'flagged' ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest texted${swap ? ' · free swap to ' + esc(swap[1]) : ''} · free drink</div>` : ''}`;
+        ${o.status === 'flagged' ? (o.message
+          ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest texted${swap ? ' · free swap to ' + esc(swap[1]) : ''} · free drink</div>`
+          : `<div class="foot wait"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Waiting on chef's OK to text the guest</div>`) : ''}`;
       body.append(el);
     }
     board.append(col);
@@ -429,7 +455,7 @@ poll();
       const tables = [...document.querySelectorAll('.t.flagged h2')].map(h => h.textContent.replace(/\D/g, '')).sort((a, b) => a - b);
       const nm = added.join(', '); $('#toast-t').textContent = nm[0].toUpperCase() + nm.slice(1) + (added.length > 1 ? ' are' : ' is') + ' sold out';
       $('#toast-s').textContent = tables.length
-        ? `${tables.length} order${tables.length > 1 ? 's' : ''} affected (table${tables.length > 1 ? 's' : ''} ${tables.join(', ')}). Guests texted a free swap and a free drink.`
+        ? `${tables.length} order${tables.length > 1 ? 's' : ''} affected (table${tables.length > 1 ? 's' : ''} ${tables.join(', ')}). CallOut will ask you before texting guests.`
         : 'No open orders affected.';
       $('#toast').classList.add('show');
       clearTimeout(hideT); hideT = setTimeout(() => $('#toast').classList.remove('show'), 7000);

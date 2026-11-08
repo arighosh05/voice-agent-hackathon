@@ -104,6 +104,27 @@
   .notice .lines .price { font-family:var(--mono); font-size:12px; color:var(--ok); }
 
   .again { width:100%; height:42px; margin-top:16px; border-radius:10px; border:1px solid var(--line); background:var(--card); font-weight:500; box-shadow:var(--shadow); }
+  .tabs { display:inline-flex; gap:2px; padding:3px; margin:0 0 16px; background:var(--line2); border:1px solid var(--line); border-radius:10px; }
+  .tabs button { height:30px; padding:0 14px; border-radius:7px; font-size:13px; font-weight:500; color:var(--muted); }
+  .tabs button.on { background:var(--card); color:var(--fg); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  #lookup-view { display:none; }
+  .lk-form { display:flex; gap:8px; }
+  .lk-form input { flex:1; height:44px; padding:0 14px; font:500 16px Inter,system-ui,sans-serif; border:1px solid var(--line); border-radius:10px; background:var(--card); box-shadow:var(--shadow); outline:none; }
+  .lk-form input:focus { border-color:#a1a1aa; }
+  .lk-form button { height:44px; padding:0 18px; border-radius:10px; background:var(--fg); color:#fff; font-weight:500; }
+  #lk-results { margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+  .lk { display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); padding:14px 16px; }
+  .lk:active { background:#fcfcfc; }
+  .lk .r1 { display:flex; align-items:center; gap:8px; }
+  .lk .r1 .mono { margin-right:auto; }
+  .lk .its { margin-top:8px; font-weight:500; text-transform:capitalize; }
+  .lk .its s { color:var(--subtle); text-decoration-color:var(--red); }
+  .lk .msg { margin-top:8px; font-size:13px; color:#3f3f46; background:var(--red-bg); border:1px solid var(--red-line); border-radius:8px; padding:8px 10px; }
+  .lk .msg.wait { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+  .lk .go { margin-top:8px; font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+  .empty-lk { text-align:center; color:var(--muted); padding:24px 0; }
+  .notice.wait { border-color:#fde68a; box-shadow:0 4px 16px rgba(217,119,6,.08); }
+  .notice.wait .nh { background:#fffbeb; border-color:#fde68a; color:#b45309; }
   .foot { margin-top:20px; text-align:center; color:var(--subtle); font-size:12px; }
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
 </style>
@@ -117,6 +138,14 @@
 </div></div>
 
 <main>
+  <div class="tabs" id="tabs"><button class="on" data-v="menu">Order</button><button data-v="lookup">Check status</button></div>
+  <section id="lookup-view">
+    <h1>Check your table</h1>
+    <p class="sub">Enter your table number to see your orders and any updates from the kitchen.</p>
+    <form class="lk-form" id="lk-form"><input id="lk-table" type="number" inputmode="numeric" min="1" max="99" placeholder="Table number" aria-label="Table number"><button type="submit">Check</button></form>
+    <div id="lk-results"></div>
+  </section>
+
   <section id="menu-view">
     <h1>Order</h1>
     <p class="sub">Choose items and send them straight to the line.</p>
@@ -219,22 +248,80 @@ $('#go').onclick = async () => {
   }
 };
 
-$('#again').onclick = () => { clearTimeout(pollTimer); show('menu'); loadMenu(); window.scrollTo(0, 0); };
+$('#again').onclick = () => { clearTimeout(pollTimer); placedAt = null; show('menu'); loadMenu(); window.scrollTo(0, 0); };
 
 function show(view) {
-  const s = view === 'status';
-  $('#menu-view').style.display = s ? 'none' : '';
-  $('#bar').style.display = s ? 'none' : '';
-  $('#status').style.display = s ? 'block' : 'none';
+  $('#menu-view').style.display = view === 'menu' ? '' : 'none';
+  $('#bar').style.display = view === 'menu' ? '' : 'none';
+  $('#status').style.display = view === 'status' ? 'block' : 'none';
+  $('#lookup-view').style.display = view === 'lookup' ? 'block' : 'none';
+  $('#tabs').style.display = view === 'status' ? 'none' : '';
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  clearTimeout(pollTimer); show(b.dataset.v);
+  if (b.dataset.v === 'lookup') { $('#lk-table').value ||= tSel.value; lookup(); }
+});
+
+// Table lookup: every order for a table, newest first, with kitchen updates.
+async function lookup() {
+  const n = parseInt($('#lk-table').value, 10);
+  if (!n) return;
+  $('#lk-results').innerHTML = '<div class="empty-lk">Checking…</div>';
+  try {
+    const r = await fetch('table/' + n);
+    const d = await r.json();
+    if (!r.ok || !d.orders) throw new Error(d.detail || 'lookup failed');
+    if (!d.orders.length) { $('#lk-results').innerHTML = `<div class="empty-lk">No orders for table ${n} yet.</div>`; return; }
+    const out = await soldOut();
+    $('#lk-results').innerHTML = d.orders.map(o => {
+      const b = badgeFor(o);
+      const gone = goneItem(o, out);
+      const msg = o.message ? `<div class="msg">${esc(o.message)}</div>`
+        : o.status === 'flagged' ? `<div class="msg wait">One item ran out. The kitchen is choosing an alternative for you.</div>` : '';
+      return `<button class="lk" data-id="${o.id}"><div class="r1"><span class="mono">ORD-${String(o.id).padStart(4, '0')} · ${hhmm(new Date(o.created * 1000))}</span><span class="badge ${b[0]}">${b[1]}</span></div>
+        <div class="its">${o.items.map(i => (LOOK[i.name] || ['🍽️'])[0] + ' ' + (i.name === gone ? `<s>${esc(i.name)}</s>` : esc(i.name))).join(' &nbsp; ')}</div>${msg}
+        <div class="go">View details <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></div></button>`;
+    }).join('');
+    document.querySelectorAll('.lk').forEach(el => el.onclick = () => openOrder(+el.dataset.id, n));
+  } catch (e) {
+    $('#lk-results').innerHTML = '<div class="empty-lk">Couldn’t check right now. Try again.</div>';
+  }
+}
+$('#lk-form').onsubmit = e => { e.preventDefault(); lookup(); };
+function openOrder(id, table) {
+  show('status'); alerted = true; placedAt = null;
+  $('#notice').classList.remove('show');
+  $('#st-id').textContent = 'ORD-' + String(id).padStart(4, '0');
+  $('#st-table').textContent = 'TABLE ' + String(table).padStart(2, '0');
+  window.scrollTo(0, 0);
+  poll(id);
+}
+let soldCache = { at: 0, list: [] };
+async function soldOut() {
+  if (Date.now() - soldCache.at < 1400) return soldCache.list;
+  try { const { items } = await (await fetch('menu')).json(); soldCache = { at: Date.now(), list: items.filter(i => i.sold_out).map(i => i.name) }; } catch {}
+  return soldCache.list;
+}
+function goneItem(o, out) {
+  if (o.status !== 'flagged') return null;
+  return (o.items.find(i => (o.message || '').includes(i.name)) || o.items.find(i => out.includes(i.name)) || {}).name || null;
+}
+function badgeFor(o) {
+  if (o.status === 'flagged' && !o.message) return ['amber', 'On hold'];
+  return { new: ['gray', 'Received'], fired: ['amber', 'Cooking'], flagged: ['red', 'Updated'], done: ['green', 'Ready'] }[o.status] || ['gray', o.status];
 }
 
 const hhmm = d => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-function render(o) {
+function render(o, out = []) {
   const msg = o.message || '';
-  const gone = msg ? (o.items.find(i => msg.includes(i.name)) || {}).name : null;
-  const badge = { new: ['gray', 'Received'], fired: ['amber', 'Cooking'], flagged: ['red', 'Action needed'], done: ['green', 'Ready'] }[o.status] || ['gray', o.status];
+  const waiting = o.status === 'flagged' && !msg;
+  const gone = goneItem(o, out);
+  const badge = badgeFor(o);
   $('#st-badge').innerHTML = `<span class="badge ${badge[0]}">${badge[1]}</span>`;
-  $('#st-title').textContent = { new: 'Order received', fired: 'Your food is cooking', flagged: 'An item is unavailable', done: 'Ready' }[o.status] || 'Order received';
+  $('#st-title').textContent = waiting ? 'Checking with the kitchen'
+    : { new: 'Order received', fired: 'Your food is cooking', flagged: 'An item is unavailable', done: 'Ready' }[o.status] || 'Order received';
+  if (!placedAt && o.created) placedAt = new Date(o.created * 1000);
 
   const at = { new: 1, flagged: 1, fired: 2, done: 3 }[o.status] ?? 1;
   const steps = [
@@ -245,7 +332,7 @@ function render(o) {
   ];
   $('#timeline').innerHTML = steps.map(([t, s], i) => {
     let cls = i < at || (i === at && o.status === 'done') ? 'done' : i === at ? 'now' : 'todo';
-    if (o.status === 'flagged' && i === 2) cls = 'warn', s = 'Paused, one item ran out';
+    if (o.status === 'flagged' && i === 2) cls = 'warn', s = waiting ? 'On hold, one item ran out. The kitchen is picking an alternative.' : 'Paused, one item ran out';
     return `<li class="${cls}"><span class="dot">${cls === 'done' ? CHECK : cls === 'warn' ? '!' : ''}</span><div><b>${t}</b><span>${esc(s)}</span></div></li>`;
   }).join('');
 
@@ -258,10 +345,11 @@ function render(o) {
   if (msg) {
     $('#notice-msg').textContent = msg;
     const swap = (msg.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1];
-    const comp = (msg.match(/and ([a-z ]+?) is on us/) || [])[1];
+    const comp = (msg.match(/\b(an? [a-z ]+?) is on us/i) || [])[1];
     $('#notice-lines').innerHTML =
       (swap ? `<li><span class="em">${(LOOK[swap] || ['🔁'])[0]}</span><div class="grow"><div class="nm">Swap: ${esc(swap)}</div><div class="md">Instead of the ${esc(gone || 'item')}</div></div><span class="price">$0.00</span></li>` : '') +
       (comp ? `<li><span class="em">🥤</span><div class="grow"><div class="nm" style="text-transform:none">${esc(comp[0].toUpperCase() + comp.slice(1))}</div><div class="md">On the house</div></div><span class="price">Free</span></li>` : '');
+    $('#notice').classList.remove('wait');
     $('#notice').classList.add('show');
     if (!alerted) { alerted = true; try { navigator.vibrate && navigator.vibrate([100, 60, 100]); } catch {} window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
@@ -270,7 +358,7 @@ function render(o) {
 async function poll(id) {
   try {
     const o = await (await fetch('order/' + id)).json();
-    if (o && o.items) render(o);
+    if (o && o.items) render(o, o.status === 'flagged' ? await soldOut() : []);
   } catch (e) {}
   pollTimer = setTimeout(() => poll(id), 1500);
 }
