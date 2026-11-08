@@ -1,20 +1,31 @@
-# Voice Agent Hackathon
+# CallOut
 
-Solo build for the voice-agent hackathon (Sun 2026-11-08, San Diego). ElevenLabs is the mouth and ears, Daytona is the hands.
+**A voice assistant for short-staffed kitchens.** Track 01, Local Business.
+
+## Try it live
+
+| | Link |
+|---|---|
+| 📱 **Ordering page** (open on a phone) | https://8000-b0415f9d-03f3-42cc-a0fa-61e0450a7c64.daytonaproxy01.net/ |
+| 🎙️ **CallOut kitchen + voice agent** (open on a laptop) | https://8000-b0415f9d-03f3-42cc-a0fa-61e0450a7c64.daytonaproxy01.net/kitchen?agent=agent_9201m6yj0n8fehp8xtmfvks0ztjb |
+
+> Daytona shows a one-time preview warning on each device; click **Continue**.
+
+**How to demo:** open the kitchen page, press **Start** and allow the mic, then place an order on the phone. CallOut reads it out about a second later. Try "what's on the board", "start cooking table 10", "we're out of salmon", "table 10 is done".
 
 ## User and finish line
 
-- **User:** _TBD, one specific person in one moment_
-- **Problem:** _TBD_
-- **Done means:** _TBD, a real action, e.g. "a booked appointment"_
-- **Track:** _TBD (01 Local Business / 02 Learning & Careers / 03 Health & Care / 04 Open)_
+- **User:** the Line Chef at a small burger spot, working the kitchen alone. Nobody reads the orders out to them, and their hands are always full.
+- **Done means:** every order is read out loud the moment it lands. When the chef says "we're out of salmon", every affected order is flagged and CallOut proposes a free swap and a free drink. Once the chef says yes, those customers get the offer on their phone.
 
 ## How it works
 
-1. ElevenLabs agent talks to the user.
-2. A server tool calls `POST /run` on `backend/app.py`.
-3. The backend runs code in a warm Daytona sandbox and returns the output.
-4. The agent says the result out loud.
+1. A customer orders on the phone page; the kitchen page pushes the new order into the live ElevenLabs session, so CallOut speaks without being asked.
+2. The Line Chef talks to CallOut (ElevenLabs Conversational AI, Claude Haiku 4.5, Flash TTS).
+3. CallOut's webhook tools (board, start, pause, sold out, send offer, back on the menu, modify, done) change real kitchen state in a FastAPI backend running in a **Daytona** sandbox.
+4. Measured: callouts ~1.1s after an order, replies ~1.2s after the chef stops talking.
+
+Agent setup: [docs/elevenlabs-agent.md](docs/elevenlabs-agent.md). Demo script: [docs/demo-script.md](docs/demo-script.md). Live endpoints: [LIVE.md](LIVE.md).
 
 ## Run it
 
@@ -28,23 +39,4 @@ uvicorn app:app --reload --port 8000
 # expose: cloudflared tunnel --url http://localhost:8000  (or ngrok http 8000)
 ```
 
-Then add a webhook server tool in the ElevenLabs agent pointing at `<public-url>/run` with a `code` string parameter.
 
-## Timeline (local)
-
-- Build done ~3:00 PM
-- Full submission (incl. Loom) by 4:00 PM, hard deadline 4:15 PM
-- Finalist demos at 5:00 PM
-
-## Rubric (each 1-5, /40)
-
-| Criterion | Weight | What it means |
-|---|---|---|
-| Works live | x2 | Replies in ~1.5s, handles interruption, no faked steps |
-| Solves the problem | x2 | Does the job for the named user, reaches the finish line with a real action |
-| Technical depth | x1 | Real tool calls and data beyond a configured agent |
-| Handles curveballs | x1 | Recovers when a judge changes their mind or goes off-topic |
-| Uses Daytona | x1 | Agent code, tools or data run in a Daytona sandbox |
-| Demo | x1 | Clear, matches what you claim |
-
-Bonus: best ElevenLabs build picked from finalists (tools, knowledge base, language, tuned turn-taking).
