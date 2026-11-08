@@ -95,7 +95,7 @@ def _open():
 ALIASES = {
     "salmon burger": ["salmon", "fish"],
     "chicken sandwich": ["chicken", "chix"],
-    "veggie burger": ["veggie", "veg", "vegetarian", "plant", "beyond", "impossible"],
+    "veggie burger": ["veggie", "veg", "vegetarian", "plant", "beyond"],
     "classic burger": ["classic", "beef", "cheeseburger", "hamburger", "patty", "patties"],
     "fries": ["fry", "fries", "chips", "potato", "potatoes"],
 }
@@ -114,6 +114,12 @@ def _match_item(text: str) -> str | None:
         if words & set(al):
             return name
     return None
+
+
+def _unknown(item: str) -> dict:
+    if "burger" in item.lower():
+        return {"summary": "Ambiguous: ask Marco which burger: classic, salmon or veggie.", "ok": False}
+    return {"summary": f"{item} isn't on the menu. Menu is " + ", ".join(MENU) + ".", "ok": False}
 
 
 def _join(nums: list[int]) -> str:
@@ -223,7 +229,7 @@ def eighty_six(req: EightySixIn):
     """Agent tool: mark an item out, flag affected tickets, message those customers."""
     name = _match_item(req.item)
     if not name:
-        return {"summary": f"Not sure which item '{req.item}' is. Ask Marco which one: " + ", ".join(MENU) + ".", "ok": False}
+        return _unknown(req.item)
     swap = SWAP.get(name, "classic burger")
     with _lock:
         eighty_sixed.add(name)
@@ -239,6 +245,30 @@ def eighty_six(req: EightySixIn):
     return {"summary": f"86 {name}. That hits table{'s' if len(hit) > 1 else ''} {_join(sorted(hit))}. "
                        f"I've offered them a {swap} and comped {COMP}.",
             "ok": True, "tables": sorted(hit)}
+
+
+@router.post("/restock")
+def restock(req: EightySixIn):
+    """Agent tool: an 86'd item is back. Guests already messaged keep their offer."""
+    name = _match_item(req.item)
+    if not name:
+        return _unknown(req.item)
+    with _lock:
+        if name not in eighty_sixed:
+            return {"summary": f"{name} wasn't 86'd.", "ok": False}
+        eighty_sixed.discard(name)
+    return {"summary": f"{name} is back on.", "ok": True}
+
+
+@router.post("/bump")
+def bump(req: FireIn):
+    """Agent tool: a table's food went out; clear its ticket from the board."""
+    with _lock:
+        for o in sorted(_open(), key=lambda o: o["created"]):
+            if o["table"] == req.table:
+                o["status"] = "done"
+                return {"summary": f"Table {req.table} bumped.", "ok": True}
+    return {"summary": f"No open ticket for table {req.table}.", "ok": False}
 
 
 @router.post("/reset")

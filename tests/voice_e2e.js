@@ -1,0 +1,40 @@
+const { chromium } = require('playwright');
+const B = 'https://8000-b0415f9d-03f3-42cc-a0fa-61e0450a7c64.daytonaproxy01.net';
+const AG = 'agent_9201m6yj0n8fehp8xtmfvks0ztjb';
+const conn = process.argv[2] || 'websocket';
+let P; const post = (p, b) => P.evaluate(([p, b]) => fetch(p, { method: 'POST', headers: { 'content-type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(r => r.json()), [p.slice(1), b]);
+(async () => {
+  const b = await chromium.launch({ proxy: { server: process.env.HTTPS_PROXY }, args: [
+    '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${__dirname}/${process.env.WAV||"marco.wav"}`, '--autoplay-policy=no-user-gesture-required'] });
+  const ctx = await b.newContext({ ignoreHTTPSErrors: true, permissions: ['microphone'], viewport: { width: 1280, height: 760 } });
+  const p = await ctx.newPage();
+  p.on('pageerror', e => console.log('PAGEERR', e.message));
+  p.on('console', m => { if (m.type() === 'error') console.log('CONSOLE', m.text().slice(0, 200)); });
+  P = p; await p.goto(`${B}/kitchen?agent=${AG}&conn=${conn}`);
+  await post('/reset'); await p.reload();
+  const phone = await ctx.newPage(); await phone.setViewportSize({ width: 390, height: 844 }); await phone.goto(`${B}/?table=4`); await phone.waitForTimeout(1000); await p.bringToFront();
+  await p.waitForTimeout(1500);
+  await post('/order', { table: 6, items: [{ name: 'fries', mods: ['large'] }] }); await p.waitForTimeout(2000);
+  const t0 = Date.now();
+  const seen = new Map(); const tick = setInterval(async () => { try { for (const l of (await p.locator('#log').innerText()).split('\n')) if (l && !seen.has(l)) seen.set(l, Date.now() - t0); } catch {} }, 150);
+  await p.click('#start');
+  await p.waitForFunction(() => window.__expo?.connected, null, { timeout: 20000 });
+  console.log('connected after', Date.now() - t0, 'ms');
+  await p.waitForTimeout(4000);
+  const card = phone.locator('#menu > *').filter({ hasText: /salmon burger/i });
+  await card.locator('.add').click();
+  await card.locator('label', { hasText: 'extra cheese' }).click(); await card.locator('label', { hasText: 'no pickles' }).click();
+  await phone.click('#go');
+  console.log('phone order sent at', ((Date.now() - t0) / 1000).toFixed(1), 's');
+  await phone.waitForTimeout(1500); await phone.screenshot({ path: `${__dirname}/phone-sent.png` });
+  await p.waitForTimeout(3000); await p.screenshot({ path: `${__dirname}/k-callout.png` });
+  await p.waitForTimeout(+(process.env.WAIT||62000));
+  await p.screenshot({ path: `${__dirname}/k-end.png` });
+  clearInterval(tick);
+  console.log('--- TIMELINE ---'); let lastM = null;
+  for (const [l, t] of seen) { let lat = ''; if (l.startsWith('MARCO')) lastM = t; else if (l.startsWith('EXPO') && lastM !== null) { lat = `  (+${((t - lastM)/1000).toFixed(1)}s after Marco)`; lastM = null; } console.log(`${(t/1000).toFixed(1).padStart(5)}s ${l}${lat}`); }
+  const board = await p.evaluate(() => fetch('board').then(r => r.json()));
+  console.log('--- BOARD ---\n' + board.summary);
+  await phone.screenshot({ path: `${__dirname}/phone-86.png`, fullPage: true });
+  await b.close();
+})();
