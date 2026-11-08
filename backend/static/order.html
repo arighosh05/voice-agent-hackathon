@@ -305,7 +305,7 @@ async function soldOut() {
 }
 function goneItem(o, out) {
   if (o.status !== 'flagged') return null;
-  return (o.items.find(i => (o.message || '').includes(i.name)) || o.items.find(i => out.includes(i.name)) || {}).name || null;
+  return (o.items.find(i => i.name === o.pending) || o.items.find(i => (o.message || '').includes(i.name)) || o.items.find(i => out.includes(i.name)) || {}).name || null;
 }
 function badgeFor(o) {
   if (o.status === 'flagged' && !o.message) return ['amber', 'On hold'];
