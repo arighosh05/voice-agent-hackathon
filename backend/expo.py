@@ -250,6 +250,7 @@ def eighty_six(req: EightySixIn):
                 o["message"] = (f"Sorry, we just ran out of the {name}. We can swap in a {swap} "
                                 f"at no charge, and {COMP} is on us.")
                 hit.append(o["table"])
+        hit = sorted(set(hit))  # a table with two open orders is still one table
     if not hit:
         return {"summary": f"{name.capitalize()} is sold out. No open orders affected.", "ok": True, "tables": []}
     return {"summary": f"{name.capitalize()} is sold out. That affects table{'s' if len(hit) > 1 else ''} {_join(sorted(hit))}. "
