@@ -239,7 +239,7 @@ function render(o) {
   const at = { new: 1, flagged: 1, fired: 2, done: 3 }[o.status] ?? 1;
   const steps = [
     ['Order placed', placedAt ? hhmm(placedAt) : ''],
-    ['Called out on the line', 'Expo announced it to the kitchen'],
+    ['Kitchen notified', 'Expo read your order out to the cook'],
     ['Cooking', 'On the grill'],
     ['Ready', 'Brought to your table'],
   ];
@@ -252,7 +252,7 @@ function render(o) {
   $('#st-items').innerHTML = o.items.map(i => {
     const out = i.name === gone;
     return `<li class="${out ? 'gone' : ''}"><span class="em">${(LOOK[i.name] || ['🍽️'])[0]}</span><div class="grow"><div class="nm">${esc(i.name)}</div>${
-      i.mods.length ? `<div class="md">${i.mods.map(esc).join(' · ')}</div>` : ''}</div>${out ? '<span class="badge red">86’d</span>' : ''}</li>`;
+      i.mods.length ? `<div class="md">${i.mods.map(esc).join(' · ')}</div>` : ''}</div>${out ? '<span class="badge red">Sold out</span>' : ''}</li>`;
   }).join('');
 
   if (msg) {
@@ -261,7 +261,7 @@ function render(o) {
     const comp = (msg.match(/and ([a-z ]+?) is on us/) || [])[1];
     $('#notice-lines').innerHTML =
       (swap ? `<li><span class="em">${(LOOK[swap] || ['🔁'])[0]}</span><div class="grow"><div class="nm">Swap: ${esc(swap)}</div><div class="md">Instead of the ${esc(gone || 'item')}</div></div><span class="price">$0.00</span></li>` : '') +
-      (comp ? `<li><span class="em">🥤</span><div class="grow"><div class="nm" style="text-transform:none">${esc(comp[0].toUpperCase() + comp.slice(1))}</div><div class="md">On the house</div></div><span class="price">Comped</span></li>` : '');
+      (comp ? `<li><span class="em">🥤</span><div class="grow"><div class="nm" style="text-transform:none">${esc(comp[0].toUpperCase() + comp.slice(1))}</div><div class="md">On the house</div></div><span class="price">Free</span></li>` : '');
     $('#notice').classList.add('show');
     if (!alerted) { alerted = true; try { navigator.vibrate && navigator.vibrate([100, 60, 100]); } catch {} window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
