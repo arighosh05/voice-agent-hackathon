@@ -56,7 +56,8 @@
   input:focus { border-color:var(--faint); }
   .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; padding:0 12px; border-radius:7px; font-size:13px; font-weight:500; border:1px solid var(--line2); background:var(--card); color:var(--fg2); transition:background .12s, border-color .12s; white-space:nowrap; }
   .btn:hover { background:var(--card-h); border-color:#d4d4d8; }
-  #start { width:100%; background:var(--fg); color:#fff; border-color:var(--fg); font-weight:600; }
+  #out, #test { display:none !important; }
+  #start { background:var(--fg); color:#fff; border-color:var(--fg); font-weight:600; }
   #start:hover { background:#27272a; }
   body.live #start { background:var(--card); color:var(--fg2); border-color:var(--line2); }
   body.live #agent, body.has-agent #agent { display:none; }
@@ -225,7 +226,6 @@
     <div class="hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>Voice agent<span class="muted-badge">Mic muted</span></div>
     <div class="st"><div class="wave"><i></i><i></i><i></i><i></i><i></i></div><span id="state">not connected</span></div>
     <input id="agent" placeholder="ElevenLabs agent ID" spellcheck="false">
-    <button class="btn" id="start">Start CallOut</button>
     <button class="btn" id="mute" title="Mute or unmute your mic (M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg><span id="mute-l">Mute mic</span><span class="k mono" style="font-size:11px;color:var(--faint)">M</span></button>
     <div class="meta">ElevenLabs · Daytona</div>
   </div>
@@ -237,6 +237,7 @@
     <span class="spacer"></span>
     <span id="out"></span>
     <button class="btn" id="test" title="Inject a fake order into the conversation">Test announcement</button>
+    <button class="btn" id="start">Start CallOut</button>
     <button class="btn" id="reset" title="Reset board to seeded tickets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>Reset</button>
   </header>
   <div class="content">
