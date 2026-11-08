@@ -97,7 +97,12 @@
   .col-h .n { font-family:var(--mono); font-size:12px; color:var(--dim); }
   .col.new .ic { border-color:var(--muted); border-style:dashed; }
   .col.fired .ic { border-color:var(--amber); background:conic-gradient(var(--amber) 0 50%, transparent 0); }
-  .col.flagged .ic { border-color:var(--red); background:var(--red); }
+  .col.done .ic { border-color:var(--green); background:var(--green); }
+  .col-h .att { display:inline-flex; align-items:center; height:18px; padding:0 6px; border-radius:5px; font-size:11px; font-weight:600; color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; }
+  .t.done { opacity:.55; box-shadow:none; }
+  .t.done h2 { font-size:18px; margin:6px 0 8px; }
+  .t.done .tag.green { color:#15803d; background:#f0fdf4; border-color:#bbf7d0; }
+  .t.done li .nm { font-size:14px; }
   .col-b { display:flex; flex-direction:column; gap:10px; min-height:80px; }
   .empty { border:1px dashed var(--line2); border-radius:10px; height:80px; display:grid; place-items:center; color:var(--faint); font-size:12px; }
 
@@ -358,33 +363,46 @@ $('#start').onclick = async () => {
 };
 
 $('#test').onclick = () => announce('Ordering, table 12: classic burger, extra cheese, hold the onions.');
-$('#reset').onclick = async () => { await fetch('reset', { method: 'POST' }); seen = null; queue.length = 0; };
+$('#reset').onclick = async () => { await fetch('reset', { method: 'POST' }); seen = null; queue.length = 0; doneRecent.clear(); lastOpen = new Map(); };
 
-function render(orders, out = []) {
+// Orders that leave /orders after being bumped are kept here so the Done column shows the last few.
+const doneRecent = new Map(); let lastOpen = new Map();
+function render(orders, out = [], doneList = []) {
   const board = $('#board');
+  const openIds = new Set(orders.map(o => o.id));
+  for (const [id, o] of lastOpen) if (!openIds.has(id)) doneRecent.set(id, { ...o, status: 'done', doneAt: Date.now() });
+  for (const o of doneList || []) doneRecent.set(o.id, { ...o, status: 'done', doneAt: (o.done_at || 0) * 1000 || doneRecent.get(o.id)?.doneAt || Date.now() });
+  for (const o of orders) if (o.status === 'done') doneRecent.set(o.id, { ...o, doneAt: doneRecent.get(o.id)?.doneAt || Date.now() });
+  lastOpen = new Map(orders.filter(o => o.status !== 'done').map(o => [o.id, o]));
+  const done = [...doneRecent.values()].sort((a, b) => b.doneAt - a.doneAt).slice(0, 4);
+  orders = [...orders.filter(o => o.status !== 'done'), ...done];
   const prev = new Map([...board.querySelectorAll('.t')].map(c => [c.dataset.id, c.dataset.status]));
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const EM = { 'classic burger': '🍔', 'salmon burger': '🐟', 'veggie burger': '🌱', 'chicken sandwich': '🍗', 'fries': '🍟' };
-  const COLS = [['new', 'New'], ['fired', 'Cooking'], ['flagged', 'Needs attention']];
+  const COLS = [['todo', 'To start'], ['fired', 'Cooking'], ['done', 'Done']];
+  const colOf = o => o.status === 'fired' ? 'fired' : o.status === 'done' ? 'done' : 'todo';
   const now = Date.now() / 1000;
   const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   const sorted = [...orders].sort((a, b) => a.created - b.created);
   board.innerHTML = '';
   for (const [key, name] of COLS) {
-    const list = sorted.filter(o => (o.status === 'done' ? 'fired' : o.status) === key);
+    let list = sorted.filter(o => colOf(o) === key);
+    if (key === 'todo') list.sort((a, b) => (b.status === 'flagged') - (a.status === 'flagged') || a.created - b.created);
+    if (key === 'done') list.sort((a, b) => b.doneAt - a.doneAt);
+    const att = key === 'todo' ? list.filter(o => o.status === 'flagged').length : 0;
     const col = document.createElement('div');
     col.className = 'col ' + key;
-    col.innerHTML = `<div class="col-h"><span class="ic"></span>${name}<span class="n">${list.length}</span></div><div class="col-b"></div>`;
+    col.innerHTML = `<div class="col-h"><span class="ic"></span>${name}<span class="n">${list.length}</span>${att ? `<span class="att">${att} sold out</span>` : ''}</div><div class="col-b"></div>`;
     const body = col.lastChild;
-    if (!list.length) body.innerHTML = `<div class="empty">No orders</div>`;
+    if (!list.length) body.innerHTML = `<div class="empty">${key === 'done' ? 'Finished orders show here' : 'No orders'}</div>`;
     for (const o of list) {
       const el = document.createElement('div');
       el.dataset.id = o.id; el.dataset.status = o.status;
       const was = prev.get(String(o.id));
       el.className = 't ' + o.status + (prev.size && was === undefined ? ' fresh' : '')
         + (o.status === 'flagged' && was && was !== 'flagged' ? ' hit' : '');
-      const secs = Math.max(0, now - o.created), mins = secs / 60;
-      const tag = o.status === 'fired' ? '<span class="tag amber">Cooking</span>' : o.status === 'flagged' ? '<span class="tag red">Sold out</span>' : '<span class="tag gray">New</span>';
+      const secs = Math.max(0, (o.status === 'done' && o.doneAt ? o.doneAt / 1000 : now) - o.created), mins = secs / 60;
+      const tag = o.status === 'fired' ? '<span class="tag amber">Cooking</span>' : o.status === 'flagged' ? '<span class="tag red">Sold out</span>' : o.status === 'done' ? '<span class="tag green">Done</span>' : '<span class="tag gray">New</span>';
       const swap = (o.message || '').match(/swap in an? ([a-z ]+?) at no charge/);
       el.innerHTML = `<div class="h"><span class="id">#${String(o.id).padStart(3, '0')}</span>${tag}<span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${fmt(secs)}</span></div>
         <h2>Table ${o.table}</h2>
@@ -399,9 +417,11 @@ function render(orders, out = []) {
     board.append(col);
   }
   // Summary stats
-  $('#s-open').textContent = orders.length;
-  $('#nav-open').textContent = orders.length;
-  $('#s-old').textContent = sorted.length ? fmt(now - sorted[0].created) : '0:00';
+  const live = orders.filter(o => o.status !== 'done');
+  $('#s-open').textContent = live.length;
+  $('#nav-open').textContent = live.length;
+  const oldest = sorted.find(o => o.status !== 'done');
+  $('#s-old').textContent = oldest ? fmt(now - oldest.created) : '0:00';
   $('#s-86').textContent = out.length;
   $('#nav-86n').textContent = out.length;
   $('#s-86-wrap').classList.toggle('bad', out.length > 0);
@@ -413,7 +433,7 @@ async function poll() {
     const d = await (await fetch('orders')).json();
     if (seen === null) seen = new Set(d.orders.map(o => o.id)); // don't call out what's already on the board
     for (const o of d.orders) if (!seen.has(o.id)) { seen.add(o.id); announce(o.callout); }
-    render(d.orders, d.eighty_sixed);
+    render(d.orders, d.eighty_sixed, d.done);
     $('#out').textContent = d.eighty_sixed.length ? 'Sold out: ' + d.eighty_sixed.join(', ') : '';
   } catch (e) {}
   setTimeout(poll, 1000);
