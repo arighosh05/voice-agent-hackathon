@@ -11,7 +11,7 @@
 
 > Daytona shows a one-time preview warning on each device; click **Continue**.
 
-**How to demo:** open the kitchen page, press **Start** and allow the mic, then place an order on the phone. CallOut reads it out about a second later. Try "what's on the board", "start cooking table 10", "we're out of salmon", "table 10 is done".
+**How to demo:** open the kitchen page, press **Start CallOut** and allow the mic, then place an order on the phone. CallOut reads it out about a second later. Try "what's on the board", "start cooking table 10", "we're out of salmon", "table 10 is done".
 
 ## User and finish line
 
