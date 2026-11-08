@@ -35,13 +35,14 @@ Notes: keep the mic close and pause after each line so the reply lands inside ~1
 
 | Judge does | Expo should | If it doesn't |
 |---|---|---|
-| Orders before you click Start | Order shows on the board but is not called out (only orders after Start are) | Say "What's new?", or always click Start first |
+| Orders before you click Start | Order is queued and called out about 0.6s after Expo connects | Say "What's new?" |
 | Two orders land at once | Both called out in turn, not talking over each other | "What's on the board?" |
 | Talks over Expo mid-callout | Expo stops and listens (interruptions on) | Repeat the line |
 | "No wait, fire 7 instead of 4" | Holds 4, fires 7 | "Hold 4." then "Fire 7." |
 | Fires a table that has no ticket ("fire 12") | "No open ticket for table 12." | Nothing needed, that is correct |
 | 86 an item not on the menu ("86 the lobster") | Says it's not on the menu and lists the menu | Nothing needed |
-| 86 with phrasing like "no more salmon" or "kill the salmon" | Matches salmon burger | "fish" will not match: say "86 the salmon burger" |
+| 86 with slang ("no more fish", "out of plant burgers", "86 the chips") | Maps to the menu item (fish to salmon burger, plant to veggie, chips to fries) | Say the full item name |
+| "We're out of burgers" (ambiguous) | Expo asks "Which one?" and retries with the answer | Name the burger |
 | 86 something with no open tickets ("86 the veggie") | "No open tickets affected." | Nothing needed |
 | Tries to order salmon after the 86 | Order page refuses it as sold out | Point at it: inventory is real state |
 | Off-topic ("what's the weather?", "tell me a joke") | One short line, back to the board | Move to the next beat |
