@@ -121,9 +121,26 @@
   .t .mod { font-size:11px; font-weight:500; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:5px; padding:1px 6px; }
   .t li.out .nm { color:var(--dim); text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:2px; }
   .t li.out .em { opacity:.5; }
+  .t .swapto { display:flex; align-items:center; gap:6px; margin-top:4px; font-size:15px; font-weight:600; color:#15803d; text-transform:capitalize; }
+  .t .swapto span { color:var(--faint); font-weight:500; }
+  body.stage .t .swapto { font-size:18px; }
+  #soldm { position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(9,9,11,.35); backdrop-filter:blur(4px); }
+  #soldm.show { display:grid; }
+  #soldm .card { width:min(440px, 92vw); background:var(--card); border:1px solid var(--line2); border-radius:14px; box-shadow:0 24px 64px rgba(16,24,40,.18); overflow:hidden; }
+  #soldm .mh { display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:1px solid var(--line); font-weight:600; }
+  #soldm .mh button { margin-left:auto; color:var(--dim); font-size:18px; line-height:1; }
+  #soldm ul { list-style:none; margin:0; padding:6px 16px 12px; }
+  #soldm li { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-top:1px solid var(--line); }
+  #soldm li:first-child { border-top:0; }
+  #soldm li .em { width:32px; height:32px; flex:none; border-radius:8px; background:var(--bg); border:1px solid var(--line2); display:grid; place-items:center; font-size:16px; }
+  #soldm li b { display:block; text-transform:capitalize; font-weight:600; }
+  #soldm li span { font-size:13px; color:var(--muted); }
+  #soldm .none { padding:24px 16px; text-align:center; color:var(--muted); }
+  #s-86-wrap, #out { cursor:pointer; }
   .tag { display:inline-flex; align-items:center; gap:5px; height:20px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:600; border:1px solid; }
   .tag.red { color:#b91c1c; background:#fef2f2; border-color:#fecaca; }
   .tag.amber { color:#b45309; background:#fffbeb; border-color:#fde68a; }
+  .tag.blue { color:#1d4ed8; background:#eff6ff; border-color:#bfdbfe; vertical-align:4px; margin-left:6px; }
   .tag.gray { color:var(--muted); background:var(--card-h); border-color:var(--line2); }
   .t.fired { border-color:#fcd34d; }
   .t.flagged { border-color:#fca5a5; box-shadow:0 0 0 1px rgba(239,68,68,.12), 0 6px 20px rgba(239,68,68,.10); }
@@ -237,6 +254,7 @@
 </div>
 
 <div id="toast" role="status"><div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg></div><div><b id="toast-t"></b><span id="toast-s"></span></div></div>
+<div id="soldm"><div class="card"><div class="mh"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>Sold out<button id="soldm-x" aria-label="Close">×</button></div><div id="soldm-b"></div></div></div>
 <div id="qr"><div class="card"><b>Guest ordering</b><span>Scan to order from your table</span><div id="qr-img"></div><div class="url" id="qr-url"></div></div></div>
 <!-- Vendored @elevenlabs/client 1.28.0 (IIFE build) so the demo needs no CDN. -->
 <script src="static/elevenlabs-client-1.28.0.js"></script>
@@ -403,14 +421,23 @@ function render(orders, out = [], doneList = []) {
         + (o.status === 'flagged' && was && was !== 'flagged' ? ' hit' : '');
       const secs = Math.max(0, (o.status === 'done' && o.doneAt ? o.doneAt / 1000 : now) - o.created), mins = secs / 60;
       const tag = o.status === 'fired' ? '<span class="tag amber">Cooking</span>' : o.status === 'flagged' ? '<span class="tag red">Sold out</span>' : o.status === 'done' ? '<span class="tag green">Done</span>' : '<span class="tag gray">New</span>';
-      const swap = (o.message || '').match(/swap in an? ([a-z ]+?) at no charge/);
+      // What the guest was actually texted, parsed from the message the server sent.
+      const msgTxt = o.message || '';
+      // Prefer the structured offer from the server; fall back to parsing the texted message.
+      const swapTo = o.offer ? (o.offer.swap || null) : ((msgTxt.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1] || null);
+      const drink = o.offer ? !!o.offer.drink : /drink is on us/i.test(msgTxt);
+      const swapFor = i => i.swap_to !== undefined ? i.swap_to : (swapTo && msgTxt.includes('out of the ' + i.name) ? swapTo : null);
+      const changed = o.changed && (Date.now() / 1000 - o.changed) < 90;
+      const texted = [swapTo ? 'free swap to ' + esc(swapTo) : '', drink ? 'free drink' : '',
+        !swapTo && !drink && msgTxt ? 'asked to pick something else' : ''].filter(Boolean).join(' + ');
       el.innerHTML = `<div class="h"><span class="id">#${String(o.id).padStart(3, '0')}</span>${tag}<span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${fmt(secs)}</span></div>
-        <h2>Table ${o.table}</h2>
-        <ul>${o.items.map(i => { const x = o.status === 'flagged' && out.includes(i.name);
+        <h2>Table ${o.table}${changed ? ' <span class="tag blue">Updated</span>' : ''}</h2>
+        <ul>${o.items.map(i => { const x = o.status === 'flagged' && (out.includes(i.name) || o.pending === i.name || msgTxt.includes('out of the ' + i.name));
           return `<li class="${x ? 'out' : ''}"><span class="em">${EM[i.name] || '🍽️'}</span><div><div class="nm">${esc(i.name)}</div>${
+            x && swapFor(i) ? `<div class="swapto"><span>→</span>${EM[swapFor(i)] || ''} ${esc(swapFor(i))}</div>` : ''}${
             i.mods.length ? `<div class="mods">${i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}</div></li>`; }).join('')}</ul>
         ${o.status === 'flagged' ? (o.message
-          ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest texted${swap ? ' · free swap to ' + esc(swap[1]) : ''} · free drink</div>`
+          ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest texted: ${texted}</div>`
           : `<div class="foot wait"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Waiting on chef's OK to text the guest</div>`) : ''}`;
       body.append(el);
     }
@@ -424,6 +451,7 @@ function render(orders, out = [], doneList = []) {
   $('#s-old').textContent = oldest ? fmt(now - oldest.created) : '0:00';
   $('#s-86').textContent = out.length;
   $('#nav-86n').textContent = out.length;
+  window.__boardView = { orders, out }; // display-only snapshot for the sold-out list
   $('#s-86-wrap').classList.toggle('bad', out.length > 0);
   $('#s-notified').textContent = orders.filter(o => o.message).length;
 }
@@ -490,7 +518,27 @@ poll();
   $('#qr-url').textContent = url.replace(/^https?:\/\//, '');
   const toggleQR = on => $('#qr').classList.toggle('show', on);
   $('#qr-btn').onclick = e => { e.preventDefault(); toggleQR(true); };
-  $('#nav-86').onclick = e => e.preventDefault();
+  // Sold-out list: what's out and which orders it hit.
+  const EMJ = { 'classic burger': '🍔', 'salmon burger': '🐟', 'veggie burger': '🌱', 'chicken sandwich': '🍗', 'fries': '🍟' };
+  const escH = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  function openSold(e) {
+    if (e) e.preventDefault();
+    const v = window.__boardView || { orders: [], out: [] };
+    $('#soldm-b').innerHTML = v.out.length ? '<ul>' + v.out.map(item => {
+      const hit = v.orders.filter(o => o.status === 'flagged' && (o.pending === item || o.items.some(i => i.name === item)));
+      const sent = o => (o.message || '').includes('out of the ' + item);
+      const waiting = hit.filter(o => !sent(o)).map(o => o.table), texted = hit.filter(sent).map(o => o.table);
+      const parts = [waiting.length ? `waiting on your OK: table${waiting.length > 1 ? 's' : ''} ${waiting.join(', ')}` : '',
+        texted.length ? `guests texted: table${texted.length > 1 ? 's' : ''} ${texted.join(', ')}` : ''].filter(Boolean);
+      return `<li><span class="em">${EMJ[item] || '🍽️'}</span><div><b>${escH(item)}</b><span>${parts.length ? parts.join(' · ') : 'No open orders affected'}</span></div></li>`;
+    }).join('') + '</ul>' : '<div class="none">Nothing is sold out right now.</div>';
+    $('#soldm').classList.add('show');
+  }
+  $('#nav-86').onclick = openSold;
+  $('#s-86-wrap').onclick = openSold;
+  $('#out').onclick = openSold;
+  $('#soldm').onclick = e => { if (e.target.id === 'soldm' || e.target.id === 'soldm-x') $('#soldm').classList.remove('show'); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#soldm').classList.remove('show'); });
   $('#qr').onclick = () => toggleQR(false);
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT') return;

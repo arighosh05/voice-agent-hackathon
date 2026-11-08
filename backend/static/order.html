@@ -358,10 +358,12 @@ function render(o, out = []) {
     return `<li class="${cls}"><span class="dot">${cls === 'done' ? CHECK : cls === 'warn' ? '!' : ''}</span><div><b>${t}</b><span>${esc(s)}</span></div></li>`;
   }).join('');
 
+  const swapTo = o.offer ? (o.offer.swap || null) : ((msg.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1] || null);
   $('#st-items').innerHTML = o.items.map(i => {
     const out = i.name === gone;
     return `<li class="${out ? 'gone' : ''}"><span class="em">${(LOOK[i.name] || ['🍽️'])[0]}</span><div class="grow"><div class="nm">${esc(i.name)}</div>${
-      i.mods.length ? `<div class="md">${i.mods.map(esc).join(' · ')}</div>` : ''}</div>${out ? '<span class="badge red">Sold out</span>' : ''}</li>`;
+      i.mods.length ? `<div class="md">${i.mods.map(esc).join(' · ')}</div>` : ''}${
+      out && swapTo ? `<div class="md" style="color:#15803d;font-weight:500">→ ${(LOOK[swapTo] || [''])[0]} Swapped for ${esc(swapTo)}</div>` : ''}</div>${out ? '<span class="badge red">Sold out</span>' : ''}</li>`;
   }).join('');
 
   if (msg) {
