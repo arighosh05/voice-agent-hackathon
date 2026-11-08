@@ -205,7 +205,8 @@ def order_status(oid: int):
 
 @router.get("/orders")
 def list_orders():
-    return {"orders": _open(), "eighty_sixed": sorted(eighty_sixed)}
+    done = sorted((o for o in orders if o["status"] == "done"), key=lambda o: o.get("done_at", 0), reverse=True)[:5]
+    return {"orders": _open(), "done": done, "eighty_sixed": sorted(eighty_sixed)}
 
 
 @router.get("/board")
@@ -354,6 +355,7 @@ def bump(req: FireIn):
         for o in sorted(_open(), key=lambda o: o["created"]):
             if o["table"] == req.table:
                 o["status"] = "done"
+                o["done_at"] = time.time()
                 return {"summary": f"Table {req.table} is done.", "ok": True}
     return {"summary": f"No open ticket for table {req.table}.", "ok": False}
 
