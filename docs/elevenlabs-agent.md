@@ -27,7 +27,13 @@ Understand both plain words and kitchen slang, but always reply in plain words:
 - "what's on the board", "what's open", "what does table N have", "how long has N waited" -> call get_board and answer from it (shorten long lists).
 - "start table N", "start cooking N", "cook N", "fire N" -> call fire_ticket with table N, then say "Starting table N." (or what the tool says).
 - "pause N", "wait on N", "hold N", "not N yet" -> call hold_ticket with table N, then say "Pausing table N."
-- "we're out of X", "X is sold out", "mark X sold out", "no more X", "86 X" -> call eighty_six_item with the item as said, then say the tool's summary (it names the affected tables and the free swap). If the tool says it's ambiguous, ask just "Which one?" with the options it gives, and call it again with the answer. If the item isn't on the menu, say that in one line.
+- "we're out of X", "X is sold out", "mark X sold out", "no more X", "86 X" -> call eighty_six_item with the item as said. It marks the item sold out but texts NO ONE yet. Then say which tables are affected and ask for the OK in one sentence, e.g. "Salmon burger is sold out. That affects tables 4, 7 and 9. Should I text them a free chicken sandwich swap and a free drink?" If the tool says it's ambiguous, ask just "Which one?" with the options it gives, and call it again with the answer. If the item isn't on the menu, say that in one line.
+- The chef answers the offer question:
+  - "yes", "do it", "sounds good", "send it" -> call send_offer with the item and the suggested swap, then say the tool's summary.
+  - names a different swap ("offer the veggie burger instead") -> call send_offer with that swap.
+  - "just the drink" / "no swap" -> send_offer with swap "none". "no drink" -> drink false.
+  - "no" / "don't text them" -> do not call send_offer; say "OK, I won't text them."
+  Never say guests were texted unless send_offer returned ok.
 - "X is back", "we got more X", "X is available again" -> call restock_item, then say "X is back on the menu."
 - "table N is done", "N went out", "clear N", "bump N" -> call bump_ticket with table N, then say "Table N is done."
 - "start 7 and 9" -> call fire_ticket once per table. "Undo that" right after starting a table -> hold_ticket for that table.
@@ -37,7 +43,7 @@ If the chef changes his mind ("no wait, start 7 instead of 4"), pause the old ta
 
 ## Tools (Webhook / server tools)
 
-All six: no auth header needed. Response is JSON; the agent should speak `summary`.
+All seven: no auth header needed. Response is JSON; the agent should speak `summary`.
 
 ### get_board
 - Method: `GET`
@@ -65,6 +71,15 @@ All six: no auth header needed. Response is JSON; the agent should speak `summar
 - Description: `Mark a menu item as out of stock (86 it). Flags every open ticket with that item and sends those customers a swap-and-comp message. Use when the chef says "86 the X" or "we're out of X".`
 - Body parameters:
   - `item` (string, required): `The item the chef named, e.g. "salmon" or "salmon burger"`
+
+### send_offer
+- Method: `POST`
+- URL: `BASE/offer`
+- Description: `Text the guests whose order has a sold-out item, after the chef approves. Offers a free swap and/or a free drink.`
+- Body parameters:
+  - `item` (string, required): `The sold-out item`
+  - `swap` (string, optional): `Menu item to offer instead, or "none"`
+  - `drink` (boolean, optional, default true): `Include a free drink`
 
 ### restock_item
 - Method: `POST`

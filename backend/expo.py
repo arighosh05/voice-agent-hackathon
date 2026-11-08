@@ -204,7 +204,7 @@ def board():
         return {"summary": "Board's clear.", "tickets": []}
     parts = []
     for o in tickets:
-        tag = {"new": "", "fired": ", cooking", "flagged": ", has a sold-out item"}[o["status"]]
+        tag = {"new": "", "fired": ", cooking", "flagged": ", has a sold-out item" + (", guest not texted yet" if o.get("pending") else "")}[o["status"]]
         parts.append(f"{o['table']}{tag}: " + "; ".join(_say_item(i) for i in o["items"]))
     oldest = int((time.time() - tickets[0]["created"]) // 60)
     wait = f" Oldest is table {tickets[0]['table']}, {oldest} minutes." if oldest >= 1 else ""
@@ -229,33 +229,89 @@ def hold(req: FireIn):
     with _lock:
         for o in sorted(_open(), key=lambda o: -o["created"]):
             if o["table"] == req.table and o["status"] == "fired":
-                o["status"] = "flagged" if o["message"] else "new"
+                o["status"] = "flagged" if (o["message"] or o.get("pending")) else "new"
                 return {"summary": f"Pausing table {req.table}.", "ok": True}
     return {"summary": f"Table {req.table} wasn't cooking yet.", "ok": False}
 
 
 @router.post("/86")
 def eighty_six(req: EightySixIn):
-    """Agent tool: mark an item out, flag affected tickets, message those customers."""
+    """Agent tool: mark an item sold out and flag affected orders. Guests are NOT
+    texted yet: the agent proposes an offer and calls /offer once the chef agrees."""
     name = _match_item(req.item)
     if not name:
         return _unknown(req.item)
-    swap = SWAP.get(name, "classic burger")
+    swap = _suggest_swap(name)
     with _lock:
         eighty_sixed.add(name)
         hit = []
         for o in _open():
-            if o["status"] != "done" and any(i["name"] == name for i in o["items"]):
+            if any(i["name"] == name for i in o["items"]):
                 o["status"] = "flagged"
-                o["message"] = (f"Sorry, we just ran out of the {name}. We can swap in a {swap} "
-                                f"at no charge, and {COMP} is on us.")
+                if not o["message"]:
+                    o["pending"] = name  # waiting on the chef's OK before texting
                 hit.append(o["table"])
         hit = sorted(set(hit))  # a table with two open orders is still one table
     if not hit:
         return {"summary": f"{name.capitalize()} is sold out. No open orders affected.", "ok": True, "tables": []}
-    return {"summary": f"{name.capitalize()} is sold out. That affects table{'s' if len(hit) > 1 else ''} {_join(sorted(hit))}. "
-                       f"I've texted them a free swap to a {swap} and {COMP} on us.",
-            "ok": True, "tables": sorted(hit)}
+    return {"summary": f"{name.capitalize()} is sold out. That affects table{'s' if len(hit) > 1 else ''} {_join(hit)}. "
+                       f"Nothing sent yet. Suggested offer: a free swap to a {swap} and {COMP} on us. "
+                       f"Ask the chef to approve or name a different swap.",
+            "ok": True, "tables": hit, "suggested_swap": swap}
+
+
+def _suggest_swap(name: str) -> str:
+    for cand in [SWAP.get(name, "classic burger"), "chicken sandwich", "classic burger", "veggie burger"]:
+        if cand != name and cand not in eighty_sixed:
+            return cand
+    return "classic burger"
+
+
+class OfferIn(BaseModel):
+    item: str
+    swap: str | None = None   # menu item to offer instead; "none" for no swap
+    drink: bool = True        # comp a drink
+
+
+@router.post("/offer")
+def send_offer(req: OfferIn):
+    """Agent tool: after the chef approves, text the swap/comp offer to every
+    order still waiting on a sold-out item."""
+    name = _match_item(req.item)
+    if not name:
+        return _unknown(req.item)
+    swap = None
+    if req.swap and req.swap.strip().lower() not in ("none", "no", "nothing", "no swap"):
+        swap = _match_item(req.swap)
+        if not swap:
+            return _unknown(req.swap)
+        if swap in eighty_sixed or swap == name:
+            return {"summary": f"Can't offer {swap}, it's sold out. Ask the chef for another swap.", "ok": False}
+    with _lock:
+        hit = []
+        for o in _open():
+            if o.get("pending") == name:
+                if swap and req.drink:
+                    o["message"] = f"Sorry, we just ran out of the {name}. We can swap in a {swap} at no charge, and {COMP} is on us."
+                elif swap:
+                    o["message"] = f"Sorry, we just ran out of the {name}. We can swap in a {swap} at no charge."
+                elif req.drink:
+                    o["message"] = f"Sorry, we just ran out of the {name}. A drink is on us while you pick something else."
+                else:
+                    o["message"] = f"Sorry, we just ran out of the {name}. Please pick something else from the menu."
+                o.pop("pending", None)
+                hit.append(o["table"])
+        hit = sorted(set(hit))
+    if not hit:
+        return {"summary": f"No guests waiting on an offer for {name}.", "ok": False}
+    what = " and ".join(x for x in [f"a free swap to a {swap}" if swap else "", f"{COMP} on us" if req.drink else ""] if x) or "an apology"
+    return {"summary": f"Texted table{'s' if len(hit) > 1 else ''} {_join(hit)}: {what}.", "ok": True, "tables": hit}
+
+
+@router.get("/table/{table}")
+def table_status(table: int):
+    """Phone lookup: every order for a table (newest first), including done ones."""
+    return {"table": table, "orders": sorted([o for o in orders if o["table"] == table], key=lambda o: -o["created"])}
 
 
 @router.post("/restock")
@@ -268,6 +324,10 @@ def restock(req: EightySixIn):
         if name not in eighty_sixed:
             return {"summary": f"{name.capitalize()} wasn't sold out.", "ok": False}
         eighty_sixed.discard(name)
+        for o in _open():  # back before anyone was texted: those orders are fine again
+            if o.get("pending") == name:
+                o.pop("pending", None)
+                o["status"] = "new"
     return {"summary": f"{name.capitalize()} is back on the menu.", "ok": True}
 
 
