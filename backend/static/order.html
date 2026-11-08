@@ -27,6 +27,11 @@
   .table-pill { position:relative; display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); font-size:13px; font-weight:500; box-shadow:var(--shadow); }
   .table-pill select { position:absolute; inset:0; opacity:0; font-size:16px; }
   .table-pill svg { color:var(--muted); }
+  .table-pill[hidden] { display:none; }
+  .seat { display:flex; align-items:center; gap:14px; padding:16px; margin-bottom:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+  .seat .num { width:52px; height:52px; flex:none; border-radius:12px; background:var(--fg); color:#fff; display:grid; place-items:center; font-size:22px; font-weight:700; letter-spacing:-.5px; }
+  .seat b { display:block; font-size:16px; font-weight:600; }
+  .seat span { color:var(--muted); font-size:13px; }
 
   main { max-width:520px; margin:0 auto; padding:24px 16px calc(110px + env(safe-area-inset-bottom)); }
   h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.4px; }
@@ -132,9 +137,7 @@
 <body>
 <div class="nav"><div class="in">
   <div class="brand"><div class="mark">🍔</div>Flat Top Burgers</div>
-  <label class="table-pill"><span id="table-label">Table 4</span>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-    <select id="table" aria-label="Table"></select></label>
+  <span class="table-pill" id="table-pill" hidden><span id="table-label"></span></span>
 </div></div>
 
 <main>
@@ -159,6 +162,7 @@
       <div class="nb" id="notice-msg"></div>
       <ul class="lines" id="notice-lines"></ul>
     </div>
+    <div class="seat" id="seat"><div class="num" id="seat-n"></div><div><b id="seat-t"></b><span>We'll bring your food there. Use this number to check your order.</span></div></div>
     <div class="card">
       <div class="card-h"><div><div class="t" id="st-title">Order received</div><div class="mono" id="st-id"></div></div><span id="st-badge"></span></div>
       <ol class="timeline" id="timeline"></ol>
@@ -189,17 +193,24 @@ const LOOK = {
   'fries':            ['🍟', 'Hand-cut, sea salt'],
 };
 const CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>';
-const tSel = $('#table');
-const qTable = new URLSearchParams(location.search).get('table') || '4';
-for (let i = 1; i <= 12; i++) tSel.add(new Option('Table ' + i, i, false, String(i) === qTable));
-const syncTable = () => { $('#table-label').textContent = 'Table ' + tSel.value; };
-tSel.onchange = syncTable; syncTable();
+// Tables are assigned by the server when an order is placed; remember the last one on this phone.
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const qTable = new URLSearchParams(location.search).get('table'); // optional override for testing
+let myTable = store.get('callout-table');
+function setTable(n) {
+  if (!n) return;
+  myTable = String(n); store.set('callout-table', myTable);
+  $('#table-label').textContent = 'Table ' + myTable;
+  $('#table-pill').hidden = false;
+}
+if (myTable) setTable(myTable);
 const chosen = new Map();
 
 function updateBar() {
   const n = chosen.size;
   $('#go').disabled = n === 0;
-  $('#count').innerHTML = n ? `<b>${n} item${n > 1 ? 's' : ''}</b> · Table ${tSel.value}` : 'No items selected';
+  $('#count').innerHTML = n ? `<b>${n} item${n > 1 ? 's' : ''}</b> selected` : 'No items selected';
 }
 
 async function loadMenu() {
@@ -233,15 +244,25 @@ $('#go').onclick = async () => {
   const items = [...chosen].map(([name, el]) => ({
     name, mods: [...el.querySelectorAll('input:checked')].map(i => i.value) }));
   try {
-    const r = await fetch('order', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ table: +tSel.value, items }) });
-    const d = await r.json();
+    let r = await fetch('order', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(qTable ? { table: +qTable, items } : { items }) });
+    let d = await r.json();
+    if (r.status === 422 && !qTable) { // server without auto-assign yet: fall back to a fixed table
+      r = await fetch('order', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ table: +(myTable || 4), items }) });
+      d = await r.json(); if (r.ok) d.table ??= +(myTable || 4);
+    }
     if (!r.ok) { $('#err').textContent = d.detail || 'Could not place order. Try again.'; loadMenu(); return; }
     show('status');
     alerted = false; placedAt = new Date();
     $('#notice').classList.remove('show');
     $('#st-id').textContent = 'ORD-' + String(d.id).padStart(4, '0');
-    $('#st-table').textContent = 'TABLE ' + String(tSel.value).padStart(2, '0');
+    const t = d.table ?? qTable;
+    setTable(t);
+    $('#seat').style.display = t ? '' : 'none';
+    $('#seat-n').textContent = t || '';
+    $('#seat-t').textContent = "You're at table " + t;
+    $('#st-table').textContent = t ? 'TABLE ' + String(t).padStart(2, '0') : '';
     poll(d.id);
   } catch (e) {
     $('#err').textContent = 'No connection. Try again.'; updateBar();
@@ -260,7 +281,7 @@ function show(view) {
 }
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
   clearTimeout(pollTimer); show(b.dataset.v);
-  if (b.dataset.v === 'lookup') { $('#lk-table').value ||= tSel.value; lookup(); }
+  if (b.dataset.v === 'lookup') { $('#lk-table').value ||= myTable || ''; lookup(); }
 });
 
 // Table lookup: every order for a table, newest first, with kitchen updates.
@@ -294,6 +315,7 @@ function openOrder(id, table) {
   $('#notice').classList.remove('show');
   $('#st-id').textContent = 'ORD-' + String(id).padStart(4, '0');
   $('#st-table').textContent = 'TABLE ' + String(table).padStart(2, '0');
+  $('#seat').style.display = ''; $('#seat-n').textContent = table; $('#seat-t').textContent = "You're at table " + table;
   window.scrollTo(0, 0);
   poll(id);
 }
