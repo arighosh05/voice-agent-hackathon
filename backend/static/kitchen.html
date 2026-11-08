@@ -5,56 +5,128 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Expo Kitchen</title>
 <style>
-  :root { --bg:#0c0a09; --fg:#fafaf9; --muted:#a8a29e; --card:#1c1917; --line:#292524; --new:#fafaf9; --fired:#f97316; --flag:#ef4444; --ok:#22c55e; }
+  :root {
+    --bg:#0b0a09; --fg:#fbf8f3; --muted:#a39a90; --dim:#6b635b; --card:#181513; --card2:#211d1a; --line:#2e2925;
+    --new:#4ade80; --fired:#fb923c; --flag:#f43f5e; --ok:#22c55e; --speak:#60a5fa;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; font:16px/1.4 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--fg); }
-  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); }
-  h1 { margin:0 12px 0 0; font-size:22px; letter-spacing:.5px; }
-  #state { color:var(--muted); font-size:14px; }
-  #state.on { color:var(--ok); }
-  input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); width:260px; max-width:100%; }
-  button { font:inherit; border:0; border-radius:8px; padding:9px 14px; cursor:pointer; background:#44403c; color:var(--fg); }
-  #start { background:var(--ok); color:#000; font-weight:700; }
+  html, body { height:100%; }
+  body { margin:0; font:16px/1.35 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--fg); overflow:hidden; display:flex; flex-direction:column; }
+  button { font:inherit; color:inherit; border:0; cursor:pointer; }
+
+  /* header */
+  header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); background:#0f0d0c; }
+  h1 { margin:0 6px 0 0; font-size:28px; font-weight:900; letter-spacing:4px; }
+  h1 em { font-style:normal; color:var(--fired); }
+  .voice { display:flex; align-items:center; gap:12px; padding:8px 18px 8px 10px; border-radius:999px; background:var(--card2); border:1px solid var(--line); min-width:220px; }
+  .orb { position:relative; width:34px; height:34px; border-radius:50%; background:var(--dim); flex:none; transition:background .2s; }
+  .orb::before, .orb::after { content:""; position:absolute; inset:0; border-radius:50%; background:inherit; opacity:0; }
+  #state { font-size:20px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
+  body[data-voice="listening"] .orb { background:var(--ok); }
+  body[data-voice="listening"] .orb::before { animation:ring 2s ease-out infinite; }
+  body[data-voice="listening"] #state { color:var(--ok); }
+  body[data-voice="speaking"] .orb { background:var(--speak); animation:talk .5s ease-in-out infinite alternate; }
+  body[data-voice="speaking"] .orb::before { animation:ring 1s ease-out infinite; }
+  body[data-voice="speaking"] .orb::after { animation:ring 1s ease-out .5s infinite; }
+  body[data-voice="speaking"] #state { color:var(--speak); }
+  body[data-voice="connecting"] .orb { background:var(--fired); animation:blink .8s infinite; }
+  body[data-voice="failed"] .orb { background:var(--flag); }
+  body[data-voice="failed"] #state { color:var(--flag); font-size:14px; text-transform:none; letter-spacing:0; }
+  @keyframes ring { from { transform:scale(1); opacity:.55; } to { transform:scale(2.2); opacity:0; } }
+  @keyframes talk { from { transform:scale(.88); } to { transform:scale(1.08); } }
+  @keyframes blink { 50% { opacity:.35; } }
+  #out:empty { display:none; }
+  #out { font-size:20px; font-weight:900; letter-spacing:1px; text-transform:uppercase; color:#fff; background:var(--flag); padding:8px 16px; border-radius:10px; }
   .spacer { flex:1; }
-  main { display:grid; grid-template-columns: 1fr 340px; gap:16px; padding:16px; }
-  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
-  #board { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; align-content:start; }
-  .t { background:var(--card); border:2px solid var(--line); border-left:8px solid var(--new); border-radius:10px; padding:12px; }
-  .t.fired { border-left-color:var(--fired); }
-  .t.flagged { border-left-color:var(--flag); border-color:var(--flag); }
-  .t.fresh { animation: pop 1.2s ease-out; }
-  @keyframes pop { from { box-shadow:0 0 0 6px #22c55e; } to { box-shadow:0 0 0 0 transparent; } }
-  .t h2 { margin:0; font-size:26px; display:flex; justify-content:space-between; }
-  .t .age { font-size:14px; color:var(--muted); font-weight:400; }
-  .t ul { margin:8px 0 0; padding-left:18px; }
-  .t li { text-transform:capitalize; font-size:18px; }
-  .t .mod { color:var(--muted); font-size:15px; text-transform:none; display:block; }
-  .tag { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-top:8px; }
-  .fired .tag { color:var(--fired); } .flagged .tag { color:var(--flag); }
-  aside { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; height:calc(100vh - 110px); overflow:auto; }
-  aside h3 { margin:0 0 8px; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-  .line { margin:6px 0; font-size:15px; }
-  .line b { color:var(--muted); font-weight:600; margin-right:6px; }
-  .line.agent b { color:var(--ok); }
-  .line.sys { color:var(--muted); font-size:13px; }
-  #out { color:var(--flag); font-weight:700; }
+  .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  input { font:inherit; font-size:14px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--fg); width:240px; max-width:100%; }
+  .controls button { font-size:14px; border-radius:10px; padding:10px 14px; background:var(--card2); border:1px solid var(--line); }
+  .controls button:hover { border-color:var(--dim); }
+  #start { background:var(--ok); color:#04130a; font-weight:800; border-color:var(--ok); }
+  body.live #start { background:var(--card2); color:var(--fg); border-color:var(--line); font-weight:600; }
+  body.live #agent { display:none; }
+
+  /* layout */
+  main { flex:1; min-height:0; display:grid; grid-template-columns:1fr minmax(300px, 26vw); }
+  #board { overflow:auto; padding:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:16px; align-content:start; }
+  #board:empty::before { content:"Board's clear. Waiting on orders…"; color:var(--dim); font-size:28px; font-weight:700; grid-column:1/-1; padding:40px 0; text-align:center; }
+  @media (max-width: 900px) { body { display:block; overflow:auto; height:auto; } main { display:block; } #board { overflow:visible; padding:12px; grid-template-columns:1fr; } aside { border-left:0; border-top:1px solid var(--line); } h1 { font-size:22px; } #banner .big { font-size:28px; } }
+
+  /* tickets */
+  .t { position:relative; background:var(--card); border:2px solid var(--line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; transition:border-color .3s, transform .3s; }
+  .t .bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--card2); border-bottom:1px solid var(--line); font-size:13px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .t .bar .status::before { content:""; display:inline-block; width:10px; height:10px; border-radius:50%; background:currentColor; margin-right:8px; vertical-align:0; }
+  .t.new .bar { color:var(--new); }
+  .t.fired { border-color:var(--fired); }
+  .t.fired .bar { background:var(--fired); color:#1a0d02; }
+  .t.flagged { border-color:var(--flag); box-shadow:0 0 0 4px rgba(244,63,94,.18), 0 0 40px rgba(244,63,94,.25); }
+  .t.flagged .bar { background:repeating-linear-gradient(-45deg, var(--flag) 0 14px, #d61f45 14px 28px); color:#fff; }
+  .t.fresh { animation:pop 2.4s ease-out; }
+  .t.hit { animation:shake .6s ease-in-out 2; }
+  @keyframes pop { 0% { transform:scale(.92); box-shadow:0 0 0 0 var(--new); border-color:var(--new); } 15% { transform:scale(1.02); box-shadow:0 0 0 10px rgba(74,222,128,.35); border-color:var(--new); } 100% { transform:none; box-shadow:0 0 0 0 transparent; } }
+  @keyframes shake { 0%,100% { transform:none; } 25% { transform:translateX(-6px) rotate(-.6deg); } 75% { transform:translateX(6px) rotate(.6deg); } }
+  .t .head { display:flex; justify-content:space-between; align-items:baseline; padding:12px 16px 4px; }
+  .t h2 { margin:0; font-size:52px; line-height:1; font-weight:900; letter-spacing:-1px; }
+  .t h2 small { font-size:18px; color:var(--dim); font-weight:700; letter-spacing:0; margin-right:4px; }
+  .t .age { font-size:22px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .t .age.warn { color:var(--fired); } .t .age.late { color:var(--flag); }
+  .t ul { list-style:none; margin:0; padding:6px 16px 16px; }
+  .t li { font-size:26px; font-weight:750; text-transform:capitalize; padding:6px 0; border-top:1px solid var(--line); }
+  .t li:first-child { border-top:0; }
+  .t .mod { display:block; font-size:19px; font-weight:700; color:#fcd34d; text-transform:uppercase; letter-spacing:.5px; }
+  .t .mod::before { content:"› "; color:var(--dim); }
+  .t li.out { color:var(--dim); }
+  .t li.out .nm { text-decoration:line-through; text-decoration-color:var(--flag); text-decoration-thickness:4px; }
+  .t li.out .tag86 { display:inline-block; margin-left:8px; font-size:14px; font-weight:900; color:#fff; background:var(--flag); border-radius:6px; padding:2px 7px; vertical-align:6px; text-decoration:none; text-transform:none; }
+  .t .note { margin:0 12px 12px; padding:10px 12px; border-radius:10px; background:rgba(244,63,94,.12); border:1px solid rgba(244,63,94,.4); font-size:15px; color:#fecdd3; }
+  .t .note b { color:#fff; }
+
+  /* heard rail */
+  aside { border-left:1px solid var(--line); background:#0f0d0c; display:flex; flex-direction:column; min-height:0; }
+  aside h3 { margin:0; padding:16px 20px 10px; font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:2px; }
+  #log { flex:1; overflow:auto; padding:0 20px 20px; }
+  .line { margin:0 0 12px; font-size:17px; color:var(--muted); }
+  .line b { display:block; font-size:12px; letter-spacing:2px; color:var(--dim); font-weight:800; }
+  .line.agent b { color:var(--speak); }
+  .line.sys { font-size:13px; color:var(--dim); }
+  .line:first-child:not(.sys) { font-size:26px; line-height:1.25; color:var(--fg); font-weight:650; padding-bottom:14px; border-bottom:1px solid var(--line); animation:in .35s ease-out; }
+  @keyframes in { from { opacity:0; transform:translateY(-8px); } }
+
+  /* 86 banner + QR overlay */
+  #banner { position:fixed; left:50%; top:96px; transform:translate(-50%, -160%); z-index:20; background:var(--flag); color:#fff; border-radius:18px; padding:18px 30px; box-shadow:0 20px 60px rgba(244,63,94,.45); text-align:center; transition:transform .45s cubic-bezier(.2,1.3,.4,1), visibility 0s .45s; visibility:hidden; max-width:92vw; }
+  #banner.show { transform:translate(-50%, 0); visibility:visible; transition:transform .45s cubic-bezier(.2,1.3,.4,1); }
+  #banner .big { font-size:44px; font-weight:900; letter-spacing:1px; text-transform:uppercase; line-height:1.05; }
+  #banner .small { font-size:20px; font-weight:700; opacity:.92; margin-top:6px; }
+  #qr { position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(11,10,9,.88); backdrop-filter:blur(6px); }
+  #qr.show { display:grid; }
+  #qr .card { background:#fff; color:#111; border-radius:24px; padding:28px 32px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+  #qr .card b { display:block; font-size:30px; font-weight:900; margin-bottom:4px; }
+  #qr .card span { display:block; color:#666; font-size:16px; margin-bottom:16px; }
+  #qr-img svg { width:min(60vh, 80vw); height:auto; display:block; }
+  #qr .url { margin-top:12px; font:14px ui-monospace,monospace; color:#555; word-break:break-all; max-width:60vh; }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
 </style>
 </head>
-<body>
+<body data-voice="off">
 <header>
-  <h1>EXPO</h1>
-  <span id="state">not connected</span>
-  <span class="spacer"></span>
+  <h1>EXP<em>O</em></h1>
+  <div class="voice"><span class="orb"></span><span id="state">not connected</span></div>
   <span id="out"></span>
-  <input id="agent" placeholder="ElevenLabs agent ID">
-  <button id="start">Start Expo</button>
-  <button id="test" title="Inject a fake ticket into the conversation">Test callout</button>
-  <button id="reset" title="Reset board to seeded tickets">Reset</button>
+  <span class="spacer"></span>
+  <div class="controls">
+    <input id="agent" placeholder="ElevenLabs agent ID">
+    <button id="start">Start Expo</button>
+    <button id="test" title="Inject a fake ticket into the conversation">Test callout</button>
+    <button id="qr-btn" title="Show the order QR code (Q)">QR</button>
+    <button id="reset" title="Reset board to seeded tickets">Reset</button>
+  </div>
 </header>
 <main>
   <section id="board"></section>
-  <aside><h3>Heard</h3><div id="log"></div></aside>
+  <aside><h3>Heard on the line</h3><div id="log"></div></aside>
 </main>
+<div id="banner" aria-live="assertive"><div class="big" id="banner-big"></div><div class="small" id="banner-small"></div></div>
+<div id="qr"><div class="card"><b>Order from your phone</b><span>Scan, pick a burger, and listen to the kitchen.</span><div id="qr-img"></div><div class="url" id="qr-url"></div></div></div>
 <!-- Vendored @elevenlabs/client 1.28.0 (IIFE build) so the demo needs no CDN. -->
 <script src="static/elevenlabs-client-1.28.0.js"></script>
 <script type="module">
@@ -138,20 +210,26 @@ $('#start').onclick = async () => {
 $('#test').onclick = () => announce('Ordering, table 12: classic burger, extra cheese, hold the onions.');
 $('#reset').onclick = async () => { await fetch('reset', { method: 'POST' }); seen = null; queue.length = 0; };
 
-function render(orders) {
-  const fresh = new Set();
+function render(orders, out = []) {
   const board = $('#board');
-  const prev = new Set([...board.children].map(c => c.dataset.id));
+  const prev = new Map([...board.children].map(c => [c.dataset.id, c.dataset.status]));
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const label = { new: 'New', fired: 'On the grill', flagged: '86 · customer texted', done: 'Done' };
   board.innerHTML = '';
   for (const o of [...orders].sort((a, b) => a.created - b.created)) {
     const el = document.createElement('div');
-    el.dataset.id = o.id;
-    el.className = 't ' + o.status + (prev.size && !prev.has(String(o.id)) ? ' fresh' : '');
-    const mins = Math.floor((Date.now() / 1000 - o.created) / 60);
-    el.innerHTML = `<h2>T${o.table}<span class="age">${mins}m</span></h2><ul>${o.items.map(i =>
-      `<li>${i.name}${i.mods.map(m => `<span class="mod">${m}</span>`).join('')}</li>`).join('')}</ul>
-      ${o.status === 'fired' ? '<div class="tag">fired</div>' : ''}
-      ${o.status === 'flagged' ? '<div class="tag">86 · customer notified</div>' : ''}`;
+    el.dataset.id = o.id; el.dataset.status = o.status;
+    const was = prev.get(String(o.id));
+    el.className = 't ' + o.status + (prev.size && was === undefined ? ' fresh' : '')
+      + (o.status === 'flagged' && was && was !== 'flagged' ? ' hit' : '');
+    const secs = Math.max(0, Math.floor(Date.now() / 1000 - o.created));
+    const mins = Math.floor(secs / 60), age = mins + ':' + String(secs % 60).padStart(2, '0');
+    el.innerHTML = `<div class="bar"><span class="status">${label[o.status] || o.status}</span><span>#${o.id}</span></div>
+      <div class="head"><h2><small>TABLE</small>${o.table}</h2><span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}">${age}</span></div>
+      <ul>${o.items.map(i => { const x = o.status === 'flagged' && out.includes(i.name);
+        return `<li class="${x ? 'out' : ''}"><span class="nm">${esc(i.name)}</span>${x ? '<span class="tag86">86</span>' : ''}${
+          i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</li>`; }).join('')}</ul>
+      ${o.status === 'flagged' && o.message ? `<div class="note"><b>Texted:</b> ${esc(o.message)}</div>` : ''}`;
     board.append(el);
   }
 }
@@ -161,12 +239,64 @@ async function poll() {
     const d = await (await fetch('orders')).json();
     if (seen === null) seen = new Set(d.orders.map(o => o.id)); // don't call out what's already on the board
     for (const o of d.orders) if (!seen.has(o.id)) { seen.add(o.id); announce(o.callout); }
-    render(d.orders);
+    render(d.orders, d.eighty_sixed);
     $('#out').textContent = d.eighty_sixed.length ? '86: ' + d.eighty_sixed.join(', ') : '';
   } catch (e) {}
   setTimeout(poll, 1000);
 }
 poll();
+</script>
+<!-- Display-only layer: voice orb, 86 banner, QR overlay. Reads the DOM the script above writes; no API logic here. -->
+<script src="static/qrcode-2.0.4.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  // Voice orb follows whatever text the agent wiring puts in #state.
+  const syncVoice = () => {
+    const t = $('#state').textContent.trim().toLowerCase();
+    const v = t.startsWith('failed') ? 'failed' : t.startsWith('connecting') ? 'connecting'
+      : t === 'speaking' ? 'speaking' : (t === 'listening' || t === 'thinking') ? 'listening' : 'off';
+    document.body.dataset.voice = v;
+    document.body.classList.toggle('live', v === 'listening' || v === 'speaking');
+  };
+  new MutationObserver(syncVoice).observe($('#state'), { childList: true, characterData: true, subtree: true });
+  syncVoice();
+
+  // 86 banner: fires when a new item shows up in #out.
+  let known = new Set(), hideT = null;
+  new MutationObserver(() => {
+    const items = $('#out').textContent.replace(/^86:\s*/, '').split(',').map(s => s.trim()).filter(Boolean);
+    const added = items.filter(i => !known.has(i));
+    known = new Set(items);
+    if (!added.length || performance.now() < 2500) return; // skip 86s already on the board at load
+    setTimeout(() => {
+      const tables = [...document.querySelectorAll('.t.flagged h2')].map(h => h.lastChild.textContent.trim()).sort((a, b) => a - b);
+      $('#banner-big').textContent = '86 ' + added.join(', ');
+      $('#banner-small').textContent = tables.length
+        ? `Table${tables.length > 1 ? 's' : ''} ${tables.join(', ')} flagged · swap + comp sent`
+        : 'No open tickets affected';
+      $('#banner').classList.add('show');
+      clearTimeout(hideT); hideT = setTimeout(() => $('#banner').classList.remove('show'), 6000);
+    }, 150);
+  }).observe($('#out'), { childList: true, characterData: true, subtree: true });
+
+  // QR overlay pointing at this server's order page.
+  const url = location.origin + location.pathname.replace(/kitchen\/?$/, '') + '?table=4';
+  try {
+    const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+    $('#qr-img').innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+  } catch (e) {}
+  $('#qr-url').textContent = url;
+  const toggleQR = (on) => $('#qr').classList.toggle('show', on);
+  $('#qr-btn').onclick = () => toggleQR(true);
+  $('#qr').onclick = () => toggleQR(false);
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'q' || e.key === 'Q') toggleQR(!$('#qr').classList.contains('show'));
+    if (e.key === 'Escape') toggleQR(false);
+  });
+  if (new URLSearchParams(location.search).has('qr')) toggleQR(true);
+})();
 </script>
 </body>
 </html>
