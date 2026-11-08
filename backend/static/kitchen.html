@@ -367,10 +367,11 @@ $('#reset').onclick = async () => { await fetch('reset', { method: 'POST' }); se
 
 // Orders that leave /orders after being bumped are kept here so the Done column shows the last few.
 const doneRecent = new Map(); let lastOpen = new Map();
-function render(orders, out = []) {
+function render(orders, out = [], doneList = []) {
   const board = $('#board');
   const openIds = new Set(orders.map(o => o.id));
   for (const [id, o] of lastOpen) if (!openIds.has(id)) doneRecent.set(id, { ...o, status: 'done', doneAt: Date.now() });
+  for (const o of doneList || []) doneRecent.set(o.id, { ...o, status: 'done', doneAt: (o.done_at || 0) * 1000 || doneRecent.get(o.id)?.doneAt || Date.now() });
   for (const o of orders) if (o.status === 'done') doneRecent.set(o.id, { ...o, doneAt: doneRecent.get(o.id)?.doneAt || Date.now() });
   lastOpen = new Map(orders.filter(o => o.status !== 'done').map(o => [o.id, o]));
   const done = [...doneRecent.values()].sort((a, b) => b.doneAt - a.doneAt).slice(0, 4);
@@ -432,7 +433,7 @@ async function poll() {
     const d = await (await fetch('orders')).json();
     if (seen === null) seen = new Set(d.orders.map(o => o.id)); // don't call out what's already on the board
     for (const o of d.orders) if (!seen.has(o.id)) { seen.add(o.id); announce(o.callout); }
-    render(d.orders, d.eighty_sixed);
+    render(d.orders, d.eighty_sixed, d.done);
     $('#out').textContent = d.eighty_sixed.length ? 'Sold out: ' + d.eighty_sixed.join(', ') : '';
   } catch (e) {}
   setTimeout(poll, 1000);
