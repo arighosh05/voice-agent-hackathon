@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expo Kitchen</title>
+<style>
+  :root { --bg:#0c0a09; --fg:#fafaf9; --muted:#a8a29e; --card:#1c1917; --line:#292524; --new:#fafaf9; --fired:#f97316; --flag:#ef4444; --ok:#22c55e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.4 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--fg); }
+  header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); }
+  h1 { margin:0 12px 0 0; font-size:22px; letter-spacing:.5px; }
+  #state { color:var(--muted); font-size:14px; }
+  #state.on { color:var(--ok); }
+  input { font:inherit; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg); width:260px; max-width:100%; }
+  button { font:inherit; border:0; border-radius:8px; padding:9px 14px; cursor:pointer; background:#44403c; color:var(--fg); }
+  #start { background:var(--ok); color:#000; font-weight:700; }
+  .spacer { flex:1; }
+  main { display:grid; grid-template-columns: 1fr 340px; gap:16px; padding:16px; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  #board { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; align-content:start; }
+  .t { background:var(--card); border:2px solid var(--line); border-left:8px solid var(--new); border-radius:10px; padding:12px; }
+  .t.fired { border-left-color:var(--fired); }
+  .t.flagged { border-left-color:var(--flag); border-color:var(--flag); }
+  .t.fresh { animation: pop 1.2s ease-out; }
+  @keyframes pop { from { box-shadow:0 0 0 6px #22c55e; } to { box-shadow:0 0 0 0 transparent; } }
+  .t h2 { margin:0; font-size:26px; display:flex; justify-content:space-between; }
+  .t .age { font-size:14px; color:var(--muted); font-weight:400; }
+  .t ul { margin:8px 0 0; padding-left:18px; }
+  .t li { text-transform:capitalize; font-size:18px; }
+  .t .mod { color:var(--muted); font-size:15px; text-transform:none; display:block; }
+  .tag { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-top:8px; }
+  .fired .tag { color:var(--fired); } .flagged .tag { color:var(--flag); }
+  aside { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; height:calc(100vh - 110px); overflow:auto; }
+  aside h3 { margin:0 0 8px; font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .line { margin:6px 0; font-size:15px; }
+  .line b { color:var(--muted); font-weight:600; margin-right:6px; }
+  .line.agent b { color:var(--ok); }
+  .line.sys { color:var(--muted); font-size:13px; }
+  #out { color:var(--flag); font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>EXPO</h1>
+  <span id="state">not connected</span>
+  <span class="spacer"></span>
+  <span id="out"></span>
+  <input id="agent" placeholder="ElevenLabs agent ID">
+  <button id="start">Start Expo</button>
+  <button id="test" title="Inject a fake ticket into the conversation">Test callout</button>
+  <button id="reset" title="Reset board to seeded tickets">Reset</button>
+</header>
+<main>
+  <section id="board"></section>
+  <aside><h3>Heard</h3><div id="log"></div></aside>
+</main>
+<!-- Vendored @elevenlabs/client 1.28.0 (IIFE build) so the demo needs no CDN. -->
+<script src="static/elevenlabs-client-1.28.0.js"></script>
+<script type="module">
+const { Conversation } = window.ElevenLabsClient;
+
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+$('#agent').value = params.get('agent') || store.get('expo-agent') || '';
+
+let convo = null, mode = 'listening', seen = null;
+const queue = [];
+
+function log(who, text, cls = '') {
+  const d = document.createElement('div');
+  d.className = 'line ' + cls;
+  d.innerHTML = who ? `<b>${who}</b>` : '';
+  d.append(text);
+  $('#log').prepend(d);
+}
+
+function chime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1320].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+      const t = ctx.currentTime + i * 0.12;
+      g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      o.start(t); o.stop(t + 0.25);
+    });
+  } catch {}
+}
+
+// Send queued callouts only while the agent isn't talking, so it doesn't talk over itself.
+function flush() {
+  if (!convo || mode === 'speaking' || !queue.length) return;
+  const text = queue.shift();
+  convo.sendUserMessage(`[NEW TICKET] ${text}`);
+  log('', 'ticket sent to Expo: ' + text, 'sys');
+}
+setInterval(flush, 300);
+
+function announce(callout) {
+  chime();
+  if (convo) queue.push(callout);
+  else log('', 'new ticket (Expo not connected): ' + callout, 'sys');
+}
+
+$('#start').onclick = async () => {
+  if (convo) { await convo.endSession(); convo = null; $('#start').textContent = 'Start Expo'; return; }
+  const agentId = $('#agent').value.trim();
+  if (!agentId) { alert('Paste the ElevenLabs agent ID first'); return; }
+  store.set('expo-agent', agentId);
+  $('#state').textContent = 'connecting…';
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    convo = await Conversation.startSession({
+      agentId,
+      connectionType: 'webrtc',
+      onConnect: () => { $('#state').textContent = 'listening'; $('#state').className = 'on'; },
+      onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start Expo'; },
+      onModeChange: (m) => { mode = m.mode; $('#state').textContent = m.mode; },
+      onMessage: (m) => {
+        const text = m.message || '';
+        if (text.startsWith('[NEW TICKET]')) return;
+        log(m.source === 'ai' || m.role === 'agent' ? 'EXPO' : 'MARCO', text, m.source === 'ai' || m.role === 'agent' ? 'agent' : '');
+      },
+      onError: (e) => log('', 'error: ' + (e?.message || e), 'sys'),
+    });
+    $('#start').textContent = 'Stop';
+  } catch (e) {
+    $('#state').textContent = 'failed: ' + (e?.message || e);
+    convo = null;
+  }
+};
+
+$('#test').onclick = () => announce('Ordering, table 12: classic burger, extra cheese, hold the onions.');
+$('#reset').onclick = async () => { await fetch('reset', { method: 'POST' }); seen = null; queue.length = 0; };
+
+function render(orders) {
+  const fresh = new Set();
+  const board = $('#board');
+  const prev = new Set([...board.children].map(c => c.dataset.id));
+  board.innerHTML = '';
+  for (const o of [...orders].sort((a, b) => a.created - b.created)) {
+    const el = document.createElement('div');
+    el.dataset.id = o.id;
+    el.className = 't ' + o.status + (prev.size && !prev.has(String(o.id)) ? ' fresh' : '');
+    const mins = Math.floor((Date.now() / 1000 - o.created) / 60);
+    el.innerHTML = `<h2>T${o.table}<span class="age">${mins}m</span></h2><ul>${o.items.map(i =>
+      `<li>${i.name}${i.mods.map(m => `<span class="mod">${m}</span>`).join('')}</li>`).join('')}</ul>
+      ${o.status === 'fired' ? '<div class="tag">fired</div>' : ''}
+      ${o.status === 'flagged' ? '<div class="tag">86 · customer notified</div>' : ''}`;
+    board.append(el);
+  }
+}
+
+async function poll() {
+  try {
+    const d = await (await fetch('orders')).json();
+    if (seen === null) seen = new Set(d.orders.map(o => o.id)); // don't call out what's already on the board
+    for (const o of d.orders) if (!seen.has(o.id)) { seen.add(o.id); announce(o.callout); }
+    render(d.orders);
+    $('#out').textContent = d.eighty_sixed.length ? '86: ' + d.eighty_sixed.join(', ') : '';
+  } catch (e) {}
+  setTimeout(poll, 1000);
+}
+poll();
+</script>
+</body>
+</html>

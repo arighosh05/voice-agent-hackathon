@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order</title>
+<style>
+  :root { --bg:#faf7f2; --fg:#1c1917; --muted:#78716c; --card:#fff; --line:#e7e5e4; --accent:#c2410c; --ok:#15803d; --warn:#b91c1c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.4 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:480px; margin:0 auto; padding:20px 16px 120px; }
+  h1 { margin:0 0 4px; font-size:28px; }
+  .sub { color:var(--muted); margin:0 0 16px; }
+  .item { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin:10px 0; }
+  .item.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+  .item.out { opacity:.45; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .name { font-weight:600; text-transform:capitalize; }
+  .mods { display:none; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .item.sel .mods { display:flex; }
+  .mods label { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:14px; }
+  .mods input { margin-right:4px; }
+  button { font:inherit; border:0; border-radius:10px; padding:10px 14px; cursor:pointer; }
+  .add { background:#f5f5f4; }
+  .sel .add { background:var(--accent); color:#fff; }
+  .bar { position:fixed; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--line); padding:12px 16px; }
+  .bar .in { max-width:480px; margin:0 auto; display:flex; gap:10px; align-items:center; }
+  select { font:inherit; padding:9px; border-radius:10px; border:1px solid var(--line); background:#fff; }
+  #go { flex:1; background:var(--fg); color:#fff; padding:14px; font-weight:600; }
+  #go:disabled { opacity:.4; }
+  #status { display:none; }
+  .big { font-size:22px; font-weight:700; margin:8px 0; }
+  .msg { background:#fef2f2; border:2px solid var(--warn); border-radius:12px; padding:16px; font-size:18px; margin-top:16px; }
+  .okc { color:var(--ok); }
+</style>
+</head>
+<body>
+<main>
+  <section id="menu-view">
+    <h1>Order up</h1>
+    <p class="sub">Pick what you want. The kitchen hears it right away.</p>
+    <div id="menu"></div>
+  </section>
+  <section id="status">
+    <h1>Thanks!</h1>
+    <p class="big" id="st-line">Sent to the kitchen.</p>
+    <p class="sub" id="st-items"></p>
+    <div id="st-msg"></div>
+  </section>
+</main>
+<div class="bar" id="bar"><div class="in">
+  <select id="table" aria-label="Table">
+  </select>
+  <button id="go" disabled>Place order</button>
+</div></div>
+<script>
+const $ = s => document.querySelector(s);
+const tSel = $('#table');
+const qTable = new URLSearchParams(location.search).get('table') || '4';
+for (let i = 1; i <= 12; i++) tSel.add(new Option('Table ' + i, i, false, String(i) === qTable));
+const chosen = new Map();
+
+async function loadMenu() {
+  const { items } = await (await fetch('menu')).json();
+  $('#menu').innerHTML = '';
+  for (const it of items) {
+    const el = document.createElement('div');
+    el.className = 'item' + (it.sold_out ? ' out' : '');
+    el.innerHTML = `<div class="row"><span class="name">${it.name}</span>
+      <button class="add" ${it.sold_out ? 'disabled' : ''}>${it.sold_out ? 'Sold out' : 'Add'}</button></div>
+      <div class="mods">${it.mods.map(m => `<label><input type="checkbox" value="${m}">${m}</label>`).join('')}</div>`;
+    el.querySelector('.add').onclick = () => {
+      if (chosen.has(it.name)) { chosen.delete(it.name); el.classList.remove('sel'); }
+      else { chosen.set(it.name, el); el.classList.add('sel'); }
+      $('#go').disabled = chosen.size === 0;
+    };
+    $('#menu').append(el);
+  }
+}
+
+$('#go').onclick = async () => {
+  $('#go').disabled = true;
+  const items = [...chosen].map(([name, el]) => ({
+    name, mods: [...el.querySelectorAll('input:checked')].map(i => i.value) }));
+  const r = await fetch('order', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ table: +tSel.value, items }) });
+  const d = await r.json();
+  if (!r.ok) { alert(d.detail || 'Could not place order'); $('#go').disabled = false; loadMenu(); return; }
+  $('#menu-view').style.display = 'none'; $('#bar').style.display = 'none'; $('#status').style.display = 'block';
+  $('#st-items').textContent = d.callout;
+  poll(d.id);
+};
+
+async function poll(id) {
+  try {
+    const o = await (await fetch('order/' + id)).json();
+    const line = { new: 'Sent to the kitchen.', fired: 'Cooking now 🔥', flagged: 'Heads up from the kitchen', done: 'Ready!' }[o.status];
+    $('#st-line').textContent = line;
+    $('#st-line').className = 'big' + (o.status === 'fired' ? ' okc' : '');
+    $('#st-msg').innerHTML = o.message ? `<div class="msg">${o.message}</div>` : '';
+  } catch (e) {}
+  setTimeout(() => poll(id), 1500);
+}
+loadMenu();
+</script>
+</body>
+</html>

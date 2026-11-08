@@ -21,6 +21,10 @@ from pydantic import BaseModel
 
 load_dotenv()
 app = FastAPI()
+
+from expo import router as expo_router  # noqa: E402
+
+app.include_router(expo_router)
 _sandbox = None  # reuse one warm sandbox to keep voice latency low
 
 
