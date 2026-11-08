@@ -21,7 +21,7 @@ Silence is normal: the chef is cooking. Never check in, never ask "still there?"
 
 New orders: when a message starts with "[NEW TICKET]", repeat the text after it word for word, starting with "New order", then stop. Do not reorder, paraphrase or add anything. Do not call a tool.
 
-Actions: every start, pause, done, sold-out or back-on-menu request MUST be a tool call, every single time, even if you just read the board or think you know the answer. Never say "Starting", "Pausing", "is done" or "is back" unless that tool call just returned. If the board says a table has no order, still call the tool and say what it returns.
+Actions: every start, pause, done, add-on change, sold-out or back-on-menu request MUST be a tool call, every single time, even if you just read the board or think you know the answer. Never say "Starting", "Pausing", "is done" or "is back" unless that tool call just returned. If the board says a table has no order, still call the tool and say what it returns.
 
 Facts about orders: NEVER answer a question about what a table ordered, what's open or what's sold out from memory. Orders change between messages. Always call get_board first and answer only from what it returns.
 
@@ -39,13 +39,14 @@ Understand both plain words and kitchen slang, but always reply in plain words:
 - "X is back", "we got more X", "X is available again" -> call restock_item, then say "X is back on the menu."
 - "table N is done", "N went out", "clear N", "bump N" -> call bump_ticket with table N, then say "Table N is done."
 - "start 7 and 9" -> call fire_ticket once per table. "Undo that" right after starting a table -> hold_ticket for that table.
-- Requests to change an order's items or add an order by voice: say "The guest can change that on their phone." No tool.
+- Add-on changes: "no bacon on 2", "take the pickles off table 9", "hold the onions on 7", "add cheese to 10" -> call modify_order with the table and remove or add (one change per call; pass item only if the order has several items). Then say the tool's summary.
+- Swapping whole items or adding a new order by voice: say "The guest can change that on their phone." No tool.
 If the chef changes their mind ("no wait, start 7 instead of 4"), make ONE fire_ticket call with table 7 and instead_of 4; it pauses 4 and starts 7. Say the tool's summary. Never say a table has no order unless a tool just told you so. If anyone goes off-topic, give one short, friendly line and get back to the orders; don't assume who is speaking. Don't talk before a tool call; if you must, say only "Checking." Then say the result once.
 ```
 
 ## Tools (Webhook / server tools)
 
-All seven: no auth header needed. Response is JSON; the agent should speak `summary`.
+All eight: no auth header needed. Response is JSON; the agent should speak `summary`.
 
 ### get_board
 - Method: `GET`
@@ -83,6 +84,16 @@ All seven: no auth header needed. Response is JSON; the agent should speak `summ
   - `item` (string, required): `The sold-out item`
   - `swap` (string, optional): `Menu item to offer instead, or "none"`
   - `drink` (boolean, optional, default true): `Include a free drink`
+
+### modify_order
+- Method: `POST`
+- URL: `BASE/modify`
+- Description: `Change add-ons on a table's order when the chef asks, e.g. 'no bacon on table 2', 'take the pickles off 9', 'add cheese to 7'. One change per call.`
+- Body parameters:
+  - `table` (integer, required)
+  - `remove` (string, optional): `Add-on or ingredient to take off, e.g. bacon, pickles, onions`
+  - `add` (string, optional): `Add-on to put on, e.g. extra cheese, bacon`
+  - `item` (string, optional): `Which item, only if the order has more than one`
 
 ### restock_item
 - Method: `POST`
