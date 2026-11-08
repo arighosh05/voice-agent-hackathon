@@ -298,7 +298,7 @@ $('#start').onclick = async () => {
     await navigator.mediaDevices.getUserMedia({ audio: true });
     convo = await Conversation.startSession({
       agentId,
-      connectionType: params.get('conn') === 'websocket' ? 'websocket' : 'webrtc',
+      connectionType: params.get('conn') === 'webrtc' ? 'webrtc' : 'websocket',  // websocket is the tested path
       onConnect: () => { $('#state').textContent = 'listening'; $('#state').className = 'on'; },
       onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start Expo'; },
       onModeChange: (m) => {
