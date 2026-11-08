@@ -174,11 +174,11 @@ def board():
         return {"summary": "Board's clear.", "tickets": []}
     parts = []
     for o in tickets:
-        mins = int((time.time() - o["created"]) // 60)
-        age = "just in" if mins < 1 else f"{mins} min"
-        tag = {"new": "", "fired": " (fired)", "flagged": " (86'd item, customer notified)"}[o["status"]]
-        parts.append(f"table {o['table']}{tag}, {age}: " + "; ".join(_say_item(i) for i in o["items"]))
-    return {"summary": f"{len(tickets)} open. " + ". ".join(parts) + ".",
+        tag = {"new": "", "fired": ", fired", "flagged": ", 86'd"}[o["status"]]
+        parts.append(f"{o['table']}{tag}: " + "; ".join(_say_item(i) for i in o["items"]))
+    oldest = int((time.time() - tickets[0]["created"]) // 60)
+    wait = f" Oldest is table {tickets[0]['table']}, {oldest} minutes." if oldest >= 1 else ""
+    return {"summary": f"{len(tickets)} open. " + ". ".join(parts) + "." + wait,
             "tickets": [{"table": o["table"], "status": o["status"], "callout": o["callout"]} for o in tickets]}
 
 
