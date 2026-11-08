@@ -133,6 +133,17 @@
   .line.sys { font-family:var(--mono); font-size:11.5px; color:var(--dim); padding-left:12px; border-left:1px solid var(--line2); }
   #log .line:first-child:not(.sys) { font-size:16px; color:var(--fg); }
   @keyframes in { from { opacity:0; transform:translateY(-4px); } }
+  .line.chip { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); padding:6px 10px; border:1px solid var(--line2); border-radius:8px; background:var(--card); }
+  .line.chip code { font-family:var(--mono); font-size:11.5px; color:var(--fg2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1; }
+  .line.chip .fn { font-weight:600; color:var(--fg2); white-space:nowrap; }
+  .line.tool::before { content:"ƒ"; font:600 12px var(--mono); color:#7c3aed; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:5px; width:20px; height:20px; display:grid; place-items:center; flex:none; }
+  .line.lat::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--faint); flex:none; }
+  .line.lat .k { flex:1; }
+  .line.chip .v { margin-left:auto; font-family:var(--mono); font-size:11.5px; font-weight:500; padding:1px 6px; border-radius:5px; border:1px solid; white-space:nowrap; }
+  .v.good { color:#15803d; background:#f0fdf4; border-color:#bbf7d0; }
+  .v.ok { color:#b45309; background:#fffbeb; border-color:#fde68a; }
+  .v.slow { color:#b91c1c; background:#fef2f2; border-color:#fecaca; }
+  #log .line.chip:first-child { font-size:12px; color:var(--muted); }
 
   /* toast + qr */
   #toast { position:fixed; right:20px; bottom:20px; z-index:20; width:380px; background:var(--card); border:1px solid rgba(239,68,68,.45); border-radius:12px; padding:14px 16px; box-shadow:0 12px 32px rgba(16,24,40,.12), 0 2px 6px rgba(16,24,40,.06); display:flex; gap:12px; transform:translateY(16px); opacity:0; visibility:hidden; transition:all .3s cubic-bezier(.2,.9,.3,1); }
@@ -148,6 +159,21 @@
   #qr-img { background:#fff; border:1px solid var(--line2); border-radius:10px; padding:12px; }
   #qr-img svg { width:min(54vh, 72vw); height:auto; display:block; }
   #qr .url { margin-top:12px; font:12px var(--mono); color:var(--dim); }
+  /* ?stage (or S key): larger type for a projector seen from the back of the room */
+  body.stage { grid-template-columns:200px 1fr; }
+  body.stage .content { grid-template-columns:1fr 360px; }
+  body.stage .t h2 { font-size:30px; }
+  body.stage .t li .nm { font-size:19px; }
+  body.stage .t li .em { width:30px; height:30px; font-size:16px; }
+  body.stage .t .mod { font-size:13px; }
+  body.stage .t .id, body.stage .t .age { font-size:15px; }
+  body.stage .tag { font-size:13px; height:23px; }
+  body.stage .stat .v { font-size:32px; }
+  body.stage .col-h { font-size:15px; }
+  body.stage #log .line:first-child:not(.sys):not(.chip) { font-size:19px; }
+  body.stage .line { font-size:15px; }
+  body.stage .line.sys { font-size:12px; }
+  body.stage .t .foot { font-size:13px; }
   @media (max-width: 1100px) { .content { grid-template-columns:1fr; } aside { display:none; } }
   @media (max-width: 760px) { body { grid-template-columns:1fr; overflow:auto; height:auto; } .side { display:none; } #board { grid-template-columns:1fr; } .stats { grid-template-columns:repeat(2, 1fr); } }
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
@@ -208,6 +234,18 @@ const store = { get(k) { try { return localStorage.getItem(k); } catch { return 
 $('#agent').value = params.get('agent') || store.get('expo-agent') || '';
 
 let convo = null, mode = 'listening', seen = null;
+// Display-only telemetry: time from a turn starting to Expo speaking, and tool call timings.
+let turn = null; const toolT = new Map();
+const TOOL = { get_board: 'Read board', fire_ticket: 'Fire ticket', eighty_six_item: '86 item', hold_ticket: 'Hold ticket', restock_item: 'Restock', bump_ticket: 'Bump ticket' };
+function metric(html, cls) {
+  const d = document.createElement('div'); d.className = 'line chip ' + cls; d.innerHTML = html; $('#log').prepend(d);
+}
+function toolArgs(p) {
+  const a = p && (p.parameters || p.params || p.tool_input || p.arguments);
+  if (!a) return '';
+  try { const o = typeof a === 'string' ? JSON.parse(a) : a;
+    return Object.values(o).map(v => String(v)).join(', ').replace(/[<>&]/g, ''); } catch { return ''; }
+}
 const queue = [];
 // Test hook for headless runs: read-only view of the page's state.
 window.__expo = { get mode() { return mode; }, get connected() { return !!convo; }, get queued() { return queue.length; } };
@@ -238,6 +276,7 @@ function flush() {
   if (!convo || mode === 'speaking' || !queue.length) return;
   const text = queue.shift();
   convo.sendUserMessage(`[NEW TICKET] ${text}`);
+  turn = { at: performance.now(), what: 'Called out' };
   log('', 'ticket sent to Expo: ' + text, 'sys');
 }
 setInterval(flush, 300);
@@ -262,10 +301,27 @@ $('#start').onclick = async () => {
       connectionType: params.get('conn') === 'websocket' ? 'websocket' : 'webrtc',
       onConnect: () => { $('#state').textContent = 'listening'; $('#state').className = 'on'; },
       onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start Expo'; },
-      onModeChange: (m) => { mode = m.mode; $('#state').textContent = m.mode; },
+      onModeChange: (m) => {
+        mode = m.mode; $('#state').textContent = m.mode;
+        if (m.mode === 'speaking' && turn) {
+          const s = (performance.now() - turn.at) / 1000;
+          metric(`<span class="k">${turn.what} in</span><span class="v ${s <= 1.5 ? 'good' : s <= 3 ? 'ok' : 'slow'}">${s.toFixed(1)}s</span>`, 'lat');
+          turn = null;
+        }
+      },
+      onAgentToolRequest: (r) => { if (r && r.tool_call_id) toolT.set(r.tool_call_id, performance.now()); },
+      onAgentToolResponse: (r) => {
+        if (!r || !r.tool_name || r.tool_name === 'end_call') return;
+        const t0 = toolT.get(r.tool_call_id); toolT.delete(r.tool_call_id);
+        const ms = t0 ? Math.round(performance.now() - t0) : null;
+        const args = toolArgs(r);
+        metric(`<span class="fn">${TOOL[r.tool_name] || r.tool_name}</span><code>${r.tool_name}${args ? '(' + args + ')' : ''}</code>`
+          + `<span class="v ${r.is_error ? 'slow' : 'good'}">${r.is_error ? 'error' : ms !== null ? ms + 'ms' : 'ok'}</span>`, 'tool');
+      },
       onMessage: (m) => {
         const text = m.message || '';
         if (text.startsWith('[NEW TICKET]')) return;
+        if (!(m.source === 'ai' || m.role === 'agent')) turn = { at: performance.now(), what: 'Replied' };
         log(m.source === 'ai' || m.role === 'agent' ? 'EXPO' : 'MARCO', text, m.source === 'ai' || m.role === 'agent' ? 'agent' : '');
       },
       onError: (e) => log('', 'error: ' + (e?.message || e), 'sys'),
@@ -396,6 +452,10 @@ poll();
     if (e.key === 'Escape') toggleQR(false);
   });
   if (new URLSearchParams(location.search).has('qr')) toggleQR(true);
+  if (new URLSearchParams(location.search).has('stage')) document.body.classList.add('stage');
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName !== 'INPUT' && (e.key === 's' || e.key === 'S')) document.body.classList.toggle('stage');
+  });
 })();
 </script>
 </body>
