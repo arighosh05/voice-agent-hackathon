@@ -319,12 +319,68 @@ def send_offer(req: OfferIn):
                 else:
                     o["message"] = f"Sorry, we just ran out of the {name}. Please pick something else from the menu."
                 o.pop("pending", None)
+                o["offer"] = {"item": name, "swap": swap, "drink": req.drink}  # what the guest was actually offered
+                for it in o["items"]:
+                    if it["name"] == name:
+                        it["swap_to"] = swap
                 hit.append(o["table"])
         hit = sorted(set(hit))
     if not hit:
         return {"summary": f"No guests waiting on an offer for {name}.", "ok": False}
     what = " and ".join(x for x in [f"a free swap to a {swap}" if swap else "", f"{COMP} on us" if req.drink else ""] if x) or "an apology"
     return {"summary": f"Texted table{'s' if len(hit) > 1 else ''} {_join(hit)}: {what}.", "ok": True, "tables": hit}
+
+
+class ModIn(BaseModel):
+    table: int
+    remove: str | None = None  # add-on or ingredient to take off, e.g. "bacon", "pickles"
+    add: str | None = None     # add-on to put on, e.g. "extra cheese"
+    item: str | None = None    # which item, when the order has more than one
+
+
+def _find_mod(name: str, word: str) -> str | None:
+    w = word.lower().strip()
+    for m in MENU[name]:
+        if w in m or m.split(" ", 1)[-1] in w:
+            return m
+    return None
+
+
+@router.post("/modify")
+def modify(req: ModIn):
+    """Agent tool: the chef changes add-ons on a table's order ("no bacon on 2")."""
+    want = _match_item(req.item) if req.item else None
+    with _lock:
+        mine = [o for o in _open() if o["table"] == req.table]
+        if not mine:
+            return {"summary": f"No open order for table {req.table}.", "ok": False}
+        o = max(mine, key=lambda o: o["created"])
+        items = [i for i in o["items"] if not want or i["name"] == want] or o["items"]
+        changed = []
+        for it in items:
+            if req.remove:
+                w = req.remove.lower().strip()
+                hit = [m for m in it["mods"] if w in m or m.split(" ", 1)[-1] in w]
+                if hit:
+                    it["mods"] = [m for m in it["mods"] if m not in hit]
+                    changed.append(it)
+                else:
+                    m = _find_mod(it["name"], "no " + w.removeprefix("no ").removeprefix("the "))
+                    if m and m.startswith("no ") and m not in it["mods"]:
+                        it["mods"].append(m)
+                        changed.append(it)
+            if req.add:
+                m = _find_mod(it["name"], req.add)
+                if m and m not in it["mods"]:
+                    it["mods"].append(m)
+                    changed.append(it)
+            if changed and len(items) > 1 and not want:
+                break  # one item per request unless the chef named it
+        if not changed:
+            return {"summary": f"Couldn't make that change on table {req.table}. Its order is: " + "; ".join(_say_item(i) for i in o["items"]) + ".", "ok": False}
+        o["callout"] = _callout(o)
+        o["changed"] = time.time()
+    return {"summary": f"Updated table {req.table}: " + "; ".join(_say_item(i) for i in o["items"]) + ".", "ok": True}
 
 
 @router.get("/table/{table}")
