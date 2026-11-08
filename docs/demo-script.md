@@ -11,7 +11,7 @@ URLs are in `LIVE.md`.
 | Time | On screen | Say / do | Rubric beat |
 |---|---|---|---|
 | 0:00–0:15 | Kitchen board, tables 7, 2 and 9 under New | "Meet the line chef at a small burger spot. They're the only one in the kitchen tonight. Nobody reads the orders out to them, their hands are full, and every new order means stopping to look at a screen. Callout reads the orders out for them." | Named user + problem |
-| 0:15–0:25 | Click **Start Callout**. Callout greets the kitchen and says it will call out new orders | "Callout is an ElevenLabs voice agent. Everything it manages (orders, the board, what's sold out) runs in a Daytona sandbox." | Uses Daytona |
+| 0:15–0:25 | Click **Start CallOut**. Callout: "Hi, I'm Callout. I'll call out new orders as they come in." | "Callout is an ElevenLabs voice agent. Everything it manages (orders, the board, what's sold out) runs in a Daytona sandbox." | Uses Daytona |
 | 0:25–0:40 | Press **Q** to show the Guest ordering QR code. The phone scans it and orders a salmon burger with extra cheese and no pickles | (stop talking) About a second later, without being asked, Callout says: "New order, table 4: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
 | 0:40–0:55 | Board | Line chef: "What's on the board?" Callout starts reading. The line chef cuts in: "Start cooking table 4." Callout: "Starting table 4." The order moves to Cooking. Point at the transcript chips, which show each tool call with its timing: "Those are real tool calls to the Daytona backend, timed live." | Interruption + real tool call, visible |
 | 0:55–1:05 | Board | Line chef: "No wait, start 7 instead of 4." Callout: "Pausing table 4. Starting table 7." | Handles a change of mind |
@@ -61,6 +61,6 @@ All of these passed against the live agent.
 | Off-topic ("what's the weather?", "tell me a joke") | One friendly line, then back to the board. It doesn't assume who is speaking | Move to the next beat |
 | Asks "is this scripted?" | Let the judge talk to Callout themselves, or place their own order | |
 | Long silence | Stays quiet and never asks "still there?" | |
-| Wifi drops or Callout goes silent | Reload the kitchen page and click Start Callout again | Order from a second laptop tab |
+| Wifi drops or Callout goes silent | Reload the kitchen page and click Start CallOut again | Order from a second laptop tab |
 | Judge's phone shows a Daytona warning after scanning | Tap Continue (only once), and the order page loads | Order from your phone instead |
 | Sandbox is slow on the first load | Load the kitchen page once before you go on | Wait a beat, then ask again |
