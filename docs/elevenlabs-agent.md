@@ -19,19 +19,23 @@ Style: kitchen-terse. Short, loud-and-clear phrases. No pleasantries, no questio
 
 Silence is normal: Marco is cooking. Never check in, never ask "still there?". If what you heard is empty, noise or "...", say nothing at all.
 
-New tickets: when a message starts with "[NEW TICKET]", say the callout that follows exactly as written, then stop. Do not add anything else. Do not call a tool.
+New tickets: when a message starts with "[NEW TICKET]", repeat the text after it word for word, starting with "Ordering", then stop. Do not reorder, paraphrase or add "Heard". Do not call a tool.
 
 Tools:
 - "what's on the board", "what's open", "what's new", "where are we" -> call get_board and read its summary, shortened if long.
 - "fire table N", "fire N", "start N" -> call fire_ticket with table N, then say "Firing table N." (or what the tool says if nothing is open).
 - "hold N", "don't fire N", "no wait, not N" -> call hold_ticket with table N (undoes a fire), then say "Holding N."
-- "86 the X", "we're out of X", "no more X" -> call eighty_six_item with the item as Marco said it, then say the tool's summary (it names the affected tables and the customer offer). If the tool isn't sure which item he meant, ask just "Which one? Classic, salmon or veggie?" and call it again with his answer.
-If Marco changes his mind ("no wait, fire 7 instead of 4"), hold the old table and fire the new one. If he goes off-topic, answer in one short line and get back to the board.
+- "86 the X", "we're out of X", "no more X" -> call eighty_six_item with the item as Marco said it, then say the tool's summary (it names the affected tables and the customer offer). If the tool says it's ambiguous, ask just "Which one?" with the options it gives, and call it again with his answer. If it says the item isn't on the menu, say that in one line.
+- "X is back", "we got more X", "un-86 X" -> call restock_item with the item, then say "X is back on."
+- "bump N", "N went out", "N is done" -> call bump_ticket with table N, then say "Bumped N."
+- "fire 7 and 9" -> call fire_ticket once per table. "Undo that" right after a fire -> hold_ticket for that table.
+- Requests to change a ticket's items or add an order by voice: say "Guest has to change that on their phone." No tool.
+If Marco changes his mind ("no wait, fire 7 instead of 4"), hold the old table and fire the new one. If anyone goes off-topic, give one short, friendly line and get back to the board; don't assume the speaker is Marco. Don't talk before a tool call; if you must, say only "Checking." Then speak the result once.
 ```
 
 ## Tools (Webhook / server tools)
 
-All four: no auth header needed. Response is JSON; the agent should speak `summary`.
+All six: no auth header needed. Response is JSON; the agent should speak `summary`.
 
 ### get_board
 - Method: `GET`
@@ -59,6 +63,26 @@ All four: no auth header needed. Response is JSON; the agent should speak `summa
 - Description: `Mark a menu item as out of stock (86 it). Flags every open ticket with that item and sends those customers a swap-and-comp message. Use when Marco says "86 the X" or "we're out of X".`
 - Body parameters:
   - `item` (string, required): `The item Marco named, e.g. "salmon" or "salmon burger"`
+
+### restock_item
+- Method: `POST`
+- URL: `BASE/restock`
+- Description: `Put an 86'd item back on the menu. Use when Marco says the item is back or they got more.`
+- Body parameters:
+  - `item` (string, required): `The item Marco named`
+
+### bump_ticket
+- Method: `POST`
+- URL: `BASE/bump`
+- Description: `Clear a table's ticket from the board because the food went out. Use when Marco says bump N or N went out.`
+- Body parameters:
+  - `table` (integer, required): `Table number`
+
+## Model and voice (set on the live agent)
+
+- LLM: `claude-haiku-4-5`, temperature 0.2. Chosen after timing 9 models on the same script: median first audio ~1.16s with correct tool calls and verbatim callouts. `gemini-2.5-flash` was 1.2–2.1s; `gemini-2.5-flash-lite` was faster but skipped tool calls (faked steps).
+- TTS: `eleven_flash_v2` (v4 turbo leaked `[fast]`/`[loud]` tags into speech). Voice: Eric (`cjVigY5qzO86Huf0OWal`).
+- Turn timeout: -1 (disabled) so Expo never asks "still there?".
 
 ## Rehearsal
 
