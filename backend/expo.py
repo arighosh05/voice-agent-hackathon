@@ -60,7 +60,7 @@ def _say_item(it: dict) -> str:
 
 
 def _callout(o: dict) -> str:
-    return f"Ordering, table {o['table']}: " + "; ".join(_say_item(i) for i in o["items"]) + "."
+    return f"New order, table {o['table']}: " + "; ".join(_say_item(i) for i in o["items"]) + "."
 
 
 def _add(table: int, items: list[dict], age_s: int = 0) -> dict:
@@ -74,10 +74,10 @@ def _add(table: int, items: list[dict], age_s: int = 0) -> dict:
 
 
 def _seed():
-    global _next_id
+    # Order ids keep counting up across resets so the kitchen page never mistakes
+    # a new ticket for an old one it already called out.
     orders.clear()
     eighty_sixed.clear()
-    _next_id = 1
     # Pre-existing tickets so an 86 of salmon hits more than the judge's table.
     _add(7, [{"name": "salmon burger", "mods": []}, {"name": "fries", "mods": []}], age_s=300)
     _add(2, [{"name": "classic burger", "mods": ["add bacon"]}], age_s=240)
@@ -102,7 +102,7 @@ ALIASES = {
 
 
 def _match_item(text: str) -> str | None:
-    t = re.sub(r"\b(the|all|our|any|more|we're|were|we|are|out|of|on|86|eighty[- ]six|no)\b", " ", text.lower())
+    t = re.sub(r"\b(the|all|our|any|more|we're|were|we|are|out|of|on|86|eighty[- ]six|no|sold|mark|is|as)\b", " ", text.lower())
     t = " ".join(re.sub(r"[^a-z ]", " ", t).split())
     if not t or t.rstrip("s") == "burger":  # ambiguous: let the agent ask which one
         return None
@@ -204,7 +204,7 @@ def board():
         return {"summary": "Board's clear.", "tickets": []}
     parts = []
     for o in tickets:
-        tag = {"new": "", "fired": ", fired", "flagged": ", 86'd"}[o["status"]]
+        tag = {"new": "", "fired": ", cooking", "flagged": ", has a sold-out item"}[o["status"]]
         parts.append(f"{o['table']}{tag}: " + "; ".join(_say_item(i) for i in o["items"]))
     oldest = int((time.time() - tickets[0]["created"]) // 60)
     wait = f" Oldest is table {tickets[0]['table']}, {oldest} minutes." if oldest >= 1 else ""
@@ -219,7 +219,7 @@ def fire(req: FireIn):
         for o in sorted(_open(), key=lambda o: o["created"]):
             if o["table"] == req.table and o["status"] in ("new", "flagged"):
                 o["status"] = "fired"
-                return {"summary": f"Fired table {req.table}.", "ok": True}
+                return {"summary": f"Starting table {req.table}.", "ok": True}
     return {"summary": f"No open ticket for table {req.table}.", "ok": False}
 
 
@@ -230,8 +230,8 @@ def hold(req: FireIn):
         for o in sorted(_open(), key=lambda o: -o["created"]):
             if o["table"] == req.table and o["status"] == "fired":
                 o["status"] = "flagged" if o["message"] else "new"
-                return {"summary": f"Holding table {req.table}.", "ok": True}
-    return {"summary": f"Table {req.table} wasn't fired.", "ok": False}
+                return {"summary": f"Pausing table {req.table}.", "ok": True}
+    return {"summary": f"Table {req.table} wasn't cooking yet.", "ok": False}
 
 
 @router.post("/86")
@@ -251,9 +251,9 @@ def eighty_six(req: EightySixIn):
                                 f"at no charge, and {COMP} is on us.")
                 hit.append(o["table"])
     if not hit:
-        return {"summary": f"86 {name}. No open tickets affected.", "ok": True, "tables": []}
-    return {"summary": f"86 {name}. That hits table{'s' if len(hit) > 1 else ''} {_join(sorted(hit))}. "
-                       f"I've offered them a {swap} and comped {COMP}.",
+        return {"summary": f"{name.capitalize()} is sold out. No open orders affected.", "ok": True, "tables": []}
+    return {"summary": f"{name.capitalize()} is sold out. That affects table{'s' if len(hit) > 1 else ''} {_join(sorted(hit))}. "
+                       f"I've texted them a free swap to a {swap} and {COMP} on us.",
             "ok": True, "tables": sorted(hit)}
 
 
@@ -265,9 +265,9 @@ def restock(req: EightySixIn):
         return _unknown(req.item)
     with _lock:
         if name not in eighty_sixed:
-            return {"summary": f"{name} wasn't 86'd.", "ok": False}
+            return {"summary": f"{name.capitalize()} wasn't sold out.", "ok": False}
         eighty_sixed.discard(name)
-    return {"summary": f"{name} is back on.", "ok": True}
+    return {"summary": f"{name.capitalize()} is back on the menu.", "ok": True}
 
 
 @router.post("/bump")
@@ -277,7 +277,7 @@ def bump(req: FireIn):
         for o in sorted(_open(), key=lambda o: o["created"]):
             if o["table"] == req.table:
                 o["status"] = "done"
-                return {"summary": f"Table {req.table} bumped.", "ok": True}
+                return {"summary": f"Table {req.table} is done.", "ok": True}
     return {"summary": f"No open ticket for table {req.table}.", "ok": False}
 
 
