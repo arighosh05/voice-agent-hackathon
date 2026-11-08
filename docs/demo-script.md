@@ -33,19 +33,26 @@ Notes: keep the mic close and pause after each line so the reply lands inside ~1
 
 ## 3. Curveballs to rehearse
 
+All of these passed against the live agent (PR #14).
+
 | Judge does | Expo should | If it doesn't |
 |---|---|---|
 | Orders before you click Start | Order is queued and called out about 0.6s after Expo connects | Say "What's new?" |
 | Two orders land at once | Both called out in turn, not talking over each other | "What's on the board?" |
-| Talks over Expo mid-callout | Expo stops and listens (interruptions on) | Repeat the line |
+| Talks over Expo mid-callout or mid-board-read ("fire table four") | Expo stops and fires 4 within about 0.7s | Repeat the line |
 | "No wait, fire 7 instead of 4" | Holds 4, fires 7 | "Hold 4." then "Fire 7." |
 | Fires a table that has no ticket ("fire 12") | "No open ticket for table 12." | Nothing needed, that is correct |
-| 86 an item not on the menu ("86 the lobster") | Says it's not on the menu and lists the menu | Nothing needed |
+| 86 an item not on the menu ("86 the lobster") | "Lobster isn't on the menu." | Nothing needed |
 | 86 with slang ("no more fish", "out of plant burgers", "86 the chips") | Maps to the menu item (fish to salmon burger, plant to veggie, chips to fries) | Say the full item name |
 | "We're out of burgers" (ambiguous) | Expo asks "Which one?" and retries with the answer | Name the burger |
 | 86 something with no open tickets ("86 the veggie") | "No open tickets affected." | Nothing needed |
 | Tries to order salmon after the 86 | Order page refuses it as sold out | Point at it: inventory is real state |
-| Off-topic ("what's the weather?", "tell me a joke") | One short line, back to the board | Move to the next beat |
+| Off-topic ("what's the weather?", "tell me a joke") | One friendly line, back to the board; doesn't assume the speaker is Marco | Move to the next beat |
+| Chatty line ("the salmon's selling great") | Does not 86 anything | |
+| "Fire 7 and 9" | Fires both | Fire them one at a time |
+| "Undo that" right after a fire | Holds the last fired table | "Hold N." |
+| "Change table 4 to no cheese" | "Guest has to change that on their phone." | |
+| "How long has 7 been waiting?" | Answers from the board (may say "Checking." first) | |
 | Asks "is this scripted?" | Let the judge say a line to Expo themselves, or place their own order | |
 | Long silence | Expo stays quiet, no "still there?" | |
 | "Salmon's back" after an 86 | Restocks it; guests already messaged keep their offer | |
