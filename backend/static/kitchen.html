@@ -3,130 +3,198 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Expo Kitchen</title>
+<title>Expo · Line board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0b0a09; --fg:#fbf8f3; --muted:#a39a90; --dim:#6b635b; --card:#181513; --card2:#211d1a; --line:#2e2925;
-    --new:#4ade80; --fired:#fb923c; --flag:#f43f5e; --ok:#22c55e; --speak:#60a5fa;
+    --bg:#09090b; --panel:#0c0c0e; --card:#121214; --card-h:#17171a; --line:#1f1f23; --line2:#27272a;
+    --fg:#fafafa; --fg2:#d4d4d8; --muted:#a1a1aa; --dim:#71717a; --faint:#52525b;
+    --brand:#f97316; --blue:#3b82f6; --green:#22c55e; --amber:#f59e0b; --red:#ef4444;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   * { box-sizing:border-box; }
   html, body { height:100%; }
-  body { margin:0; font:16px/1.35 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--fg); overflow:hidden; display:flex; flex-direction:column; }
-  button { font:inherit; color:inherit; border:0; cursor:pointer; }
+  body { margin:0; font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; font-feature-settings:"cv11","ss01"; -webkit-font-smoothing:antialiased; background:var(--bg); color:var(--fg); display:grid; grid-template-columns:240px 1fr; overflow:hidden; }
+  button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+  svg { flex:none; }
+  .mono { font-family:var(--mono); }
 
-  /* header */
-  header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); background:#0f0d0c; }
-  h1 { margin:0 6px 0 0; font-size:28px; font-weight:900; letter-spacing:4px; }
-  h1 em { font-style:normal; color:var(--fired); }
-  .voice { display:flex; align-items:center; gap:12px; padding:8px 18px 8px 10px; border-radius:999px; background:var(--card2); border:1px solid var(--line); min-width:220px; }
-  .orb { position:relative; width:34px; height:34px; border-radius:50%; background:var(--dim); flex:none; transition:background .2s; }
-  .orb::before, .orb::after { content:""; position:absolute; inset:0; border-radius:50%; background:inherit; opacity:0; }
-  #state { font-size:20px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
-  body[data-voice="listening"] .orb { background:var(--ok); }
-  body[data-voice="listening"] .orb::before { animation:ring 2s ease-out infinite; }
-  body[data-voice="listening"] #state { color:var(--ok); }
-  body[data-voice="speaking"] .orb { background:var(--speak); animation:talk .5s ease-in-out infinite alternate; }
-  body[data-voice="speaking"] .orb::before { animation:ring 1s ease-out infinite; }
-  body[data-voice="speaking"] .orb::after { animation:ring 1s ease-out .5s infinite; }
-  body[data-voice="speaking"] #state { color:var(--speak); }
-  body[data-voice="connecting"] .orb { background:var(--fired); animation:blink .8s infinite; }
-  body[data-voice="failed"] .orb { background:var(--flag); }
-  body[data-voice="failed"] #state { color:var(--flag); font-size:14px; text-transform:none; letter-spacing:0; }
-  @keyframes ring { from { transform:scale(1); opacity:.55; } to { transform:scale(2.2); opacity:0; } }
-  @keyframes talk { from { transform:scale(.88); } to { transform:scale(1.08); } }
-  @keyframes blink { 50% { opacity:.35; } }
-  #out:empty { display:none; }
-  #out { font-size:20px; font-weight:900; letter-spacing:1px; text-transform:uppercase; color:#fff; background:var(--flag); padding:8px 16px; border-radius:10px; }
-  .spacer { flex:1; }
-  .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  input { font:inherit; font-size:14px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--fg); width:240px; max-width:100%; }
-  .controls button { font-size:14px; border-radius:10px; padding:10px 14px; background:var(--card2); border:1px solid var(--line); }
-  .controls button:hover { border-color:var(--dim); }
-  #start { background:var(--ok); color:#04130a; font-weight:800; border-color:var(--ok); }
-  body.live #start { background:var(--card2); color:var(--fg); border-color:var(--line); font-weight:600; }
+  /* sidebar */
+  .side { background:var(--panel); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:14px 12px; gap:18px; min-height:0; }
+  .ws { display:flex; align-items:center; gap:10px; padding:4px 6px; }
+  .logo { width:28px; height:28px; border-radius:7px; background:linear-gradient(135deg,#fb923c,#ea580c); display:grid; place-items:center; color:#fff; font-weight:700; font-size:14px; box-shadow:inset 0 1px 0 rgba(255,255,255,.25); }
+  .ws b { display:block; font-size:14px; font-weight:600; letter-spacing:-.1px; }
+  .ws small { display:block; font-size:12px; color:var(--dim); }
+  .navs { display:flex; flex-direction:column; gap:2px; }
+  .navs .lbl { font-size:11px; font-weight:500; color:var(--faint); padding:8px 8px 4px; }
+  .navs a { display:flex; align-items:center; gap:10px; height:32px; padding:0 8px; border-radius:6px; color:var(--muted); text-decoration:none; font-weight:500; font-size:13px; }
+  .navs a.on { background:var(--card-h); color:var(--fg); box-shadow:inset 0 0 0 1px var(--line2); }
+  .navs a .k { margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--dim); }
+  .grow { flex:1; }
+
+  .agent { border:1px solid var(--line2); background:var(--card); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px; }
+  .agent .hd { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--dim); font-weight:500; }
+  .agent .st { display:flex; align-items:center; gap:10px; }
+  .wave { display:flex; align-items:center; gap:2px; height:18px; }
+  .wave i { width:3px; height:4px; border-radius:2px; background:var(--faint); transition:background .2s; }
+  body[data-voice="listening"] .wave i { background:var(--green); animation:idle 1.6s ease-in-out infinite; }
+  body[data-voice="speaking"] .wave i { background:var(--blue); animation:talk .55s ease-in-out infinite alternate; }
+  body[data-voice="connecting"] .wave i { background:var(--amber); animation:idle .8s ease-in-out infinite; }
+  body[data-voice="failed"] .wave i { background:var(--red); }
+  .wave i:nth-child(2) { animation-delay:-.15s !important; } .wave i:nth-child(3) { animation-delay:-.3s !important; } .wave i:nth-child(4) { animation-delay:-.45s !important; } .wave i:nth-child(5) { animation-delay:-.6s !important; }
+  @keyframes idle { 50% { height:7px; } }
+  @keyframes talk { from { height:4px; } to { height:18px; } }
+  #state { font-size:14px; font-weight:600; text-transform:capitalize; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  body[data-voice="listening"] #state { color:var(--green); }
+  body[data-voice="speaking"] #state { color:#93c5fd; }
+  body[data-voice="failed"] #state { color:var(--red); font-size:12px; text-transform:none; white-space:normal; }
+  .agent .meta { font-family:var(--mono); font-size:11px; color:var(--faint); }
+  input { font:inherit; font-size:12px; font-family:var(--mono); height:32px; padding:0 10px; border-radius:7px; border:1px solid var(--line2); background:var(--bg); color:var(--fg); width:100%; outline:none; }
+  input:focus { border-color:var(--faint); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; padding:0 12px; border-radius:7px; font-size:13px; font-weight:500; border:1px solid var(--line2); background:var(--card); color:var(--fg2); transition:background .12s, border-color .12s; white-space:nowrap; }
+  .btn:hover { background:var(--card-h); border-color:#3f3f46; }
+  #start { width:100%; background:var(--fg); color:#09090b; border-color:var(--fg); font-weight:600; }
+  #start:hover { background:#e4e4e7; }
+  body.live #start { background:var(--card); color:var(--fg2); border-color:var(--line2); }
   body.live #agent { display:none; }
 
-  /* layout */
-  main { flex:1; min-height:0; display:grid; grid-template-columns:1fr minmax(300px, 26vw); }
-  #board { overflow:auto; padding:20px; display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:16px; align-content:start; }
-  #board:empty::before { content:"Board's clear. Waiting on orders…"; color:var(--dim); font-size:28px; font-weight:700; grid-column:1/-1; padding:40px 0; text-align:center; }
-  @media (max-width: 900px) { body { display:block; overflow:auto; height:auto; } main { display:block; } #board { overflow:visible; padding:12px; grid-template-columns:1fr; } aside { border-left:0; border-top:1px solid var(--line); } h1 { font-size:22px; } #banner .big { font-size:28px; } }
+  /* main */
+  .main { display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .top { display:flex; align-items:center; gap:10px; height:52px; padding:0 20px; border-bottom:1px solid var(--line); }
+  .crumb { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--dim); font-weight:500; }
+  .crumb b { color:var(--fg); font-weight:500; }
+  .livepill { display:inline-flex; align-items:center; gap:6px; height:22px; padding:0 8px; border-radius:999px; border:1px solid var(--line2); font-size:11px; font-weight:500; color:var(--muted); margin-left:6px; }
+  .livepill i { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px rgba(34,197,94,.15); }
+  .spacer { flex:1; }
+  #out:empty { display:none; }
+  #out { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 10px; border-radius:7px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#fca5a5; font-size:12px; font-weight:600; text-transform:capitalize; }
 
-  /* tickets */
-  .t { position:relative; background:var(--card); border:2px solid var(--line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; transition:border-color .3s, transform .3s; }
-  .t .bar { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--card2); border-bottom:1px solid var(--line); font-size:13px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
-  .t .bar .status::before { content:""; display:inline-block; width:10px; height:10px; border-radius:50%; background:currentColor; margin-right:8px; vertical-align:0; }
-  .t.new .bar { color:var(--new); }
-  .t.fired { border-color:var(--fired); }
-  .t.fired .bar { background:var(--fired); color:#1a0d02; }
-  .t.flagged { border-color:var(--flag); box-shadow:0 0 0 4px rgba(244,63,94,.18), 0 0 40px rgba(244,63,94,.25); }
-  .t.flagged .bar { background:repeating-linear-gradient(-45deg, var(--flag) 0 14px, #d61f45 14px 28px); color:#fff; }
-  .t.fresh { animation:pop 2.4s ease-out; }
-  .t.hit { animation:shake .6s ease-in-out 2; }
-  @keyframes pop { 0% { transform:scale(.92); box-shadow:0 0 0 0 var(--new); border-color:var(--new); } 15% { transform:scale(1.02); box-shadow:0 0 0 10px rgba(74,222,128,.35); border-color:var(--new); } 100% { transform:none; box-shadow:0 0 0 0 transparent; } }
-  @keyframes shake { 0%,100% { transform:none; } 25% { transform:translateX(-6px) rotate(-.6deg); } 75% { transform:translateX(6px) rotate(.6deg); } }
-  .t .head { display:flex; justify-content:space-between; align-items:baseline; padding:12px 16px 4px; }
-  .t h2 { margin:0; font-size:52px; line-height:1; font-weight:900; letter-spacing:-1px; }
-  .t h2 small { font-size:18px; color:var(--dim); font-weight:700; letter-spacing:0; margin-right:4px; }
-  .t .age { font-size:22px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .t .age.warn { color:var(--fired); } .t .age.late { color:var(--flag); }
-  .t ul { list-style:none; margin:0; padding:6px 16px 16px; }
-  .t li { font-size:26px; font-weight:750; text-transform:capitalize; padding:6px 0; border-top:1px solid var(--line); }
-  .t li:first-child { border-top:0; }
-  .t .mod { display:block; font-size:19px; font-weight:700; color:#fcd34d; text-transform:uppercase; letter-spacing:.5px; }
-  .t .mod::before { content:"› "; color:var(--dim); }
-  .t li.out { color:var(--dim); }
-  .t li.out .nm { text-decoration:line-through; text-decoration-color:var(--flag); text-decoration-thickness:4px; }
-  .t li.out .tag86 { display:inline-block; margin-left:8px; font-size:14px; font-weight:900; color:#fff; background:var(--flag); border-radius:6px; padding:2px 7px; vertical-align:6px; text-decoration:none; text-transform:none; }
-  .t .note { margin:0 12px 12px; padding:10px 12px; border-radius:10px; background:rgba(244,63,94,.12); border:1px solid rgba(244,63,94,.4); font-size:15px; color:#fecdd3; }
-  .t .note b { color:#fff; }
+  .content { flex:1; min-height:0; display:grid; grid-template-columns:1fr 340px; }
+  .work { min-width:0; overflow:auto; padding:20px; display:flex; flex-direction:column; gap:20px; }
+  .stats { flex:none; display:grid; grid-template-columns:repeat(4, 1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .stat { background:var(--panel); padding:14px 16px; }
+  .stat .l { font-size:12px; color:var(--dim); font-weight:500; display:flex; align-items:center; gap:6px; }
+  .stat .v { font-size:26px; font-weight:600; letter-spacing:-.6px; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .stat .v small { font-size:13px; color:var(--dim); font-weight:500; letter-spacing:0; margin-left:4px; }
+  .stat.bad .v { color:#fca5a5; }
 
-  /* heard rail */
-  aside { border-left:1px solid var(--line); background:#0f0d0c; display:flex; flex-direction:column; min-height:0; }
-  aside h3 { margin:0; padding:16px 20px 10px; font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:2px; }
-  #log { flex:1; overflow:auto; padding:0 20px 20px; }
-  .line { margin:0 0 12px; font-size:17px; color:var(--muted); }
-  .line b { display:block; font-size:12px; letter-spacing:2px; color:var(--dim); font-weight:800; }
-  .line.agent b { color:var(--speak); }
-  .line.sys { font-size:13px; color:var(--dim); }
-  .line:first-child:not(.sys) { font-size:26px; line-height:1.25; color:var(--fg); font-weight:650; padding-bottom:14px; border-bottom:1px solid var(--line); animation:in .35s ease-out; }
-  @keyframes in { from { opacity:0; transform:translateY(-8px); } }
+  #board { flex:none; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; align-items:start; }
+  .col-h { display:flex; align-items:center; gap:8px; padding:0 2px 10px; font-size:13px; font-weight:500; color:var(--fg2); }
+  .col-h .ic { width:14px; height:14px; border-radius:50%; border:2px solid; }
+  .col-h .n { font-family:var(--mono); font-size:12px; color:var(--dim); }
+  .col.new .ic { border-color:var(--muted); border-style:dashed; }
+  .col.fired .ic { border-color:var(--amber); background:conic-gradient(var(--amber) 0 50%, transparent 0); }
+  .col.flagged .ic { border-color:var(--red); background:var(--red); }
+  .col-b { display:flex; flex-direction:column; gap:10px; min-height:80px; }
+  .empty { border:1px dashed var(--line2); border-radius:10px; height:80px; display:grid; place-items:center; color:var(--faint); font-size:12px; }
 
-  /* 86 banner + QR overlay */
-  #banner { position:fixed; left:50%; top:96px; transform:translate(-50%, -160%); z-index:20; background:var(--flag); color:#fff; border-radius:18px; padding:18px 30px; box-shadow:0 20px 60px rgba(244,63,94,.45); text-align:center; transition:transform .45s cubic-bezier(.2,1.3,.4,1), visibility 0s .45s; visibility:hidden; max-width:92vw; }
-  #banner.show { transform:translate(-50%, 0); visibility:visible; transition:transform .45s cubic-bezier(.2,1.3,.4,1); }
-  #banner .big { font-size:44px; font-weight:900; letter-spacing:1px; text-transform:uppercase; line-height:1.05; }
-  #banner .small { font-size:20px; font-weight:700; opacity:.92; margin-top:6px; }
-  #qr { position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(11,10,9,.88); backdrop-filter:blur(6px); }
+  .t { background:var(--card); border:1px solid var(--line2); border-radius:10px; padding:14px; box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 4px 12px rgba(0,0,0,.25); transition:border-color .3s, box-shadow .3s; }
+  .t:hover { background:var(--card-h); }
+  .t .h { display:flex; align-items:center; gap:8px; }
+  .t .id { font-family:var(--mono); font-size:12px; color:var(--dim); }
+  .t .age { margin-left:auto; font-family:var(--mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:5px; }
+  .t .age.warn { color:var(--amber); } .t .age.late { color:var(--red); }
+  .t h2 { margin:8px 0 10px; font-size:22px; font-weight:600; letter-spacing:-.5px; }
+  .t ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .t li { display:flex; align-items:flex-start; gap:10px; }
+  .t li .em { width:26px; height:26px; flex:none; border-radius:6px; background:var(--bg); border:1px solid var(--line2); display:grid; place-items:center; font-size:14px; }
+  .t li .nm { font-size:15px; font-weight:500; text-transform:capitalize; color:var(--fg); }
+  .t .mods { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .t .mod { font-size:11px; font-weight:500; color:#fcd34d; background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.25); border-radius:5px; padding:1px 6px; }
+  .t li.out .nm { color:var(--dim); text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:2px; }
+  .t li.out .em { opacity:.5; }
+  .tag { display:inline-flex; align-items:center; gap:5px; height:20px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:600; border:1px solid; }
+  .tag.red { color:#fca5a5; background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.3); }
+  .tag.amber { color:#fcd34d; background:rgba(245,158,11,.08); border-color:rgba(245,158,11,.3); }
+  .tag.gray { color:var(--muted); background:var(--card-h); border-color:var(--line2); }
+  .t.fired { border-color:rgba(245,158,11,.35); }
+  .t.flagged { border-color:rgba(239,68,68,.45); box-shadow:0 0 0 1px rgba(239,68,68,.15), 0 8px 24px rgba(239,68,68,.12); }
+  .t .foot { display:flex; align-items:center; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
+  .t .foot svg { color:var(--green); }
+  .t.fresh { animation:fresh 2.4s ease-out; }
+  .t.hit { animation:hit 1.6s ease-out; }
+  @keyframes fresh { 0% { border-color:var(--blue); box-shadow:0 0 0 4px rgba(59,130,246,.25); } 100% {} }
+  @keyframes hit { 0% { box-shadow:0 0 0 6px rgba(239,68,68,.35); } 100% {} }
+
+  /* transcript */
+  aside { border-left:1px solid var(--line); background:var(--panel); display:flex; flex-direction:column; min-height:0; }
+  aside .ah { display:flex; align-items:center; gap:8px; height:44px; padding:0 16px; border-bottom:1px solid var(--line); font-size:13px; font-weight:500; }
+  aside .ah span { margin-left:auto; font-size:11px; color:var(--dim); font-family:var(--mono); }
+  #log { flex:1; overflow:auto; padding:12px 16px 16px; display:flex; flex-direction:column; gap:14px; }
+  .line { font-size:14px; color:var(--fg2); line-height:1.5; animation:in .3s ease-out; }
+  .line b { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--dim); letter-spacing:.2px; margin-bottom:3px; }
+  .line b::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--faint); }
+  .line.agent b { color:#93c5fd; } .line.agent b::before { background:var(--blue); }
+  .line:not(.agent):not(.sys) b::before { background:var(--green); }
+  .line .tm { margin-left:auto; font-family:var(--mono); font-weight:400; color:var(--faint); letter-spacing:0; }
+  .line.sys { font-family:var(--mono); font-size:11.5px; color:var(--dim); padding-left:12px; border-left:1px solid var(--line2); }
+  #log .line:first-child:not(.sys) { font-size:16px; color:var(--fg); }
+  @keyframes in { from { opacity:0; transform:translateY(-4px); } }
+
+  /* toast + qr */
+  #toast { position:fixed; right:20px; bottom:20px; z-index:20; width:380px; background:var(--card); border:1px solid rgba(239,68,68,.45); border-radius:12px; padding:14px 16px; box-shadow:0 20px 50px rgba(0,0,0,.5); display:flex; gap:12px; transform:translateY(16px); opacity:0; visibility:hidden; transition:all .3s cubic-bezier(.2,.9,.3,1); }
+  #toast.show { transform:none; opacity:1; visibility:visible; }
+  #toast .ic { width:28px; height:28px; border-radius:7px; background:rgba(239,68,68,.12); color:var(--red); display:grid; place-items:center; flex:none; }
+  #toast b { display:block; font-size:14px; font-weight:600; text-transform:capitalize; }
+  #toast span { display:block; font-size:13px; color:var(--muted); margin-top:2px; }
+  #qr { position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); }
   #qr.show { display:grid; }
-  #qr .card { background:#fff; color:#111; border-radius:24px; padding:28px 32px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,.6); }
-  #qr .card b { display:block; font-size:30px; font-weight:900; margin-bottom:4px; }
-  #qr .card span { display:block; color:#666; font-size:16px; margin-bottom:16px; }
-  #qr-img svg { width:min(60vh, 80vw); height:auto; display:block; }
-  #qr .url { margin-top:12px; font:14px ui-monospace,monospace; color:#555; word-break:break-all; max-width:60vh; }
+  #qr .card { background:var(--card); border:1px solid var(--line2); border-radius:14px; padding:24px; text-align:center; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+  #qr .card b { display:block; font-size:16px; font-weight:600; }
+  #qr .card span { display:block; color:var(--muted); font-size:13px; margin:2px 0 16px; }
+  #qr-img { background:#fff; border-radius:10px; padding:12px; }
+  #qr-img svg { width:min(54vh, 72vw); height:auto; display:block; }
+  #qr .url { margin-top:12px; font:12px var(--mono); color:var(--dim); }
+  @media (max-width: 1100px) { .content { grid-template-columns:1fr; } aside { display:none; } }
+  @media (max-width: 760px) { body { grid-template-columns:1fr; overflow:auto; height:auto; } .side { display:none; } #board { grid-template-columns:1fr; } .stats { grid-template-columns:repeat(2, 1fr); } }
   @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body data-voice="off">
-<header>
-  <h1>EXP<em>O</em></h1>
-  <div class="voice"><span class="orb"></span><span id="state">not connected</span></div>
-  <span id="out"></span>
-  <span class="spacer"></span>
-  <div class="controls">
-    <input id="agent" placeholder="ElevenLabs agent ID">
-    <button id="start">Start Expo</button>
-    <button id="test" title="Inject a fake ticket into the conversation">Test callout</button>
-    <button id="qr-btn" title="Show the order QR code (Q)">QR</button>
-    <button id="reset" title="Reset board to seeded tickets">Reset</button>
+<nav class="side">
+  <div class="ws"><div class="logo">E</div><div><b>Expo</b><small>Flat Top Burgers</small></div></div>
+  <div class="navs">
+    <div class="lbl">Service</div>
+    <a class="on" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg>Line board<span class="k" id="nav-open">0</span></a>
+    <a href="#" id="nav-86"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>86 list<span class="k" id="nav-86n">0</span></a>
+    <a href="#" id="qr-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/></svg>Guest ordering<span class="k">Q</span></a>
   </div>
-</header>
-<main>
-  <section id="board"></section>
-  <aside><h3>Heard on the line</h3><div id="log"></div></aside>
-</main>
-<div id="banner" aria-live="assertive"><div class="big" id="banner-big"></div><div class="small" id="banner-small"></div></div>
-<div id="qr"><div class="card"><b>Order from your phone</b><span>Scan, pick a burger, and listen to the kitchen.</span><div id="qr-img"></div><div class="url" id="qr-url"></div></div></div>
+  <div class="grow"></div>
+  <div class="agent">
+    <div class="hd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>Voice agent</div>
+    <div class="st"><div class="wave"><i></i><i></i><i></i><i></i><i></i></div><span id="state">not connected</span></div>
+    <input id="agent" placeholder="ElevenLabs agent ID" spellcheck="false">
+    <button class="btn" id="start">Start Expo</button>
+    <div class="meta">ElevenLabs · Daytona</div>
+  </div>
+</nav>
+
+<div class="main">
+  <header class="top">
+    <div class="crumb">Flat Top Burgers<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg><b>Line board</b><span class="livepill"><i></i>Live</span></div>
+    <span class="spacer"></span>
+    <span id="out"></span>
+    <button class="btn" id="test" title="Inject a fake ticket into the conversation">Test callout</button>
+    <button class="btn" id="reset" title="Reset board to seeded tickets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>Reset</button>
+  </header>
+  <div class="content">
+    <div class="work">
+      <div class="stats">
+        <div class="stat"><div class="l">Open tickets</div><div class="v" id="s-open">0</div></div>
+        <div class="stat"><div class="l">Oldest ticket</div><div class="v mono" id="s-old">0:00</div></div>
+        <div class="stat" id="s-86-wrap"><div class="l">86'd items</div><div class="v" id="s-86">0</div></div>
+        <div class="stat"><div class="l">Guests notified</div><div class="v" id="s-notified">0</div></div>
+      </div>
+      <section id="board"></section>
+    </div>
+    <aside><div class="ah"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Live transcript<span>Expo ⇄ Line</span></div><div id="log"></div></aside>
+  </div>
+</div>
+
+<div id="toast" role="status"><div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg></div><div><b id="toast-t"></b><span id="toast-s"></span></div></div>
+<div id="qr"><div class="card"><b>Guest ordering</b><span>Scan to order from your table</span><div id="qr-img"></div><div class="url" id="qr-url"></div></div></div>
 <!-- Vendored @elevenlabs/client 1.28.0 (IIFE build) so the demo needs no CDN. -->
 <script src="static/elevenlabs-client-1.28.0.js"></script>
 <script type="module">
@@ -213,26 +281,48 @@ $('#reset').onclick = async () => { await fetch('reset', { method: 'POST' }); se
 
 function render(orders, out = []) {
   const board = $('#board');
-  const prev = new Map([...board.children].map(c => [c.dataset.id, c.dataset.status]));
+  const prev = new Map([...board.querySelectorAll('.t')].map(c => [c.dataset.id, c.dataset.status]));
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-  const label = { new: 'New', fired: 'On the grill', flagged: '86 · customer texted', done: 'Done' };
+  const EM = { 'classic burger': '🍔', 'salmon burger': '🐟', 'veggie burger': '🌱', 'chicken sandwich': '🍗', 'fries': '🍟' };
+  const COLS = [['new', 'New'], ['fired', 'Firing'], ['flagged', 'Needs attention']];
+  const now = Date.now() / 1000;
+  const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  const sorted = [...orders].sort((a, b) => a.created - b.created);
   board.innerHTML = '';
-  for (const o of [...orders].sort((a, b) => a.created - b.created)) {
-    const el = document.createElement('div');
-    el.dataset.id = o.id; el.dataset.status = o.status;
-    const was = prev.get(String(o.id));
-    el.className = 't ' + o.status + (prev.size && was === undefined ? ' fresh' : '')
-      + (o.status === 'flagged' && was && was !== 'flagged' ? ' hit' : '');
-    const secs = Math.max(0, Math.floor(Date.now() / 1000 - o.created));
-    const mins = Math.floor(secs / 60), age = mins + ':' + String(secs % 60).padStart(2, '0');
-    el.innerHTML = `<div class="bar"><span class="status">${label[o.status] || o.status}</span><span>#${o.id}</span></div>
-      <div class="head"><h2><small>TABLE</small>${o.table}</h2><span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}">${age}</span></div>
-      <ul>${o.items.map(i => { const x = o.status === 'flagged' && out.includes(i.name);
-        return `<li class="${x ? 'out' : ''}"><span class="nm">${esc(i.name)}</span>${x ? '<span class="tag86">86</span>' : ''}${
-          i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</li>`; }).join('')}</ul>
-      ${o.status === 'flagged' && o.message ? `<div class="note"><b>Texted:</b> ${esc(o.message)}</div>` : ''}`;
-    board.append(el);
+  for (const [key, name] of COLS) {
+    const list = sorted.filter(o => (o.status === 'done' ? 'fired' : o.status) === key);
+    const col = document.createElement('div');
+    col.className = 'col ' + key;
+    col.innerHTML = `<div class="col-h"><span class="ic"></span>${name}<span class="n">${list.length}</span></div><div class="col-b"></div>`;
+    const body = col.lastChild;
+    if (!list.length) body.innerHTML = `<div class="empty">No tickets</div>`;
+    for (const o of list) {
+      const el = document.createElement('div');
+      el.dataset.id = o.id; el.dataset.status = o.status;
+      const was = prev.get(String(o.id));
+      el.className = 't ' + o.status + (prev.size && was === undefined ? ' fresh' : '')
+        + (o.status === 'flagged' && was && was !== 'flagged' ? ' hit' : '');
+      const secs = Math.max(0, now - o.created), mins = secs / 60;
+      const tag = o.status === 'fired' ? '<span class="tag amber">Fired</span>' : o.status === 'flagged' ? '<span class="tag red">86</span>' : '<span class="tag gray">New</span>';
+      const swap = (o.message || '').match(/swap in an? ([a-z ]+?) at no charge/);
+      el.innerHTML = `<div class="h"><span class="id">#${String(o.id).padStart(3, '0')}</span>${tag}<span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${fmt(secs)}</span></div>
+        <h2>Table ${o.table}</h2>
+        <ul>${o.items.map(i => { const x = o.status === 'flagged' && out.includes(i.name);
+          return `<li class="${x ? 'out' : ''}"><span class="em">${EM[i.name] || '🍽️'}</span><div><div class="nm">${esc(i.name)}</div>${
+            i.mods.length ? `<div class="mods">${i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}</div></li>`; }).join('')}</ul>
+        ${o.status === 'flagged' ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest notified${swap ? ' · swap to ' + esc(swap[1]) : ''} · drink comped</div>` : ''}`;
+      body.append(el);
+    }
+    board.append(col);
   }
+  // Summary stats
+  $('#s-open').textContent = orders.length;
+  $('#nav-open').textContent = orders.length;
+  $('#s-old').textContent = sorted.length ? fmt(now - sorted[0].created) : '0:00';
+  $('#s-86').textContent = out.length;
+  $('#nav-86n').textContent = out.length;
+  $('#s-86-wrap').classList.toggle('bad', out.length > 0);
+  $('#s-notified').textContent = orders.filter(o => o.message).length;
 }
 
 async function poll() {
@@ -247,12 +337,11 @@ async function poll() {
 }
 poll();
 </script>
-<!-- Display-only layer: voice orb, 86 banner, QR overlay. Reads the DOM the script above writes; no API logic here. -->
+<!-- Display-only layer: voice indicator, 86 toast, transcript timestamps, QR modal. Reads the DOM the script above writes; no API logic here. -->
 <script src="static/qrcode-2.0.4.js"></script>
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  // Voice orb follows whatever text the agent wiring puts in #state.
   const syncVoice = () => {
     const t = $('#state').textContent.trim().toLowerCase();
     const v = t.startsWith('failed') ? 'failed' : t.startsWith('connecting') ? 'connecting'
@@ -263,7 +352,16 @@ poll();
   new MutationObserver(syncVoice).observe($('#state'), { childList: true, characterData: true, subtree: true });
   syncVoice();
 
-  // 86 banner: fires when a new item shows up in #out.
+  // Timestamp each transcript line as it arrives.
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
+    if (!(n instanceof HTMLElement) || n.dataset.tm) return;
+    n.dataset.tm = 1;
+    const b = n.querySelector('b');
+    if (b) { const s = document.createElement('span'); s.className = 'tm';
+      s.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); b.append(s); }
+  }))).observe($('#log'), { childList: true });
+
+  // 86 toast when a new item appears in #out.
   let known = new Set(), hideT = null;
   new MutationObserver(() => {
     const items = $('#out').textContent.replace(/^86:\s*/, '').split(',').map(s => s.trim()).filter(Boolean);
@@ -271,25 +369,25 @@ poll();
     known = new Set(items);
     if (!added.length || performance.now() < 2500) return; // skip 86s already on the board at load
     setTimeout(() => {
-      const tables = [...document.querySelectorAll('.t.flagged h2')].map(h => h.lastChild.textContent.trim()).sort((a, b) => a - b);
-      $('#banner-big').textContent = '86 ' + added.join(', ');
-      $('#banner-small').textContent = tables.length
-        ? `Table${tables.length > 1 ? 's' : ''} ${tables.join(', ')} flagged · swap + comp sent`
-        : 'No open tickets affected';
-      $('#banner').classList.add('show');
-      clearTimeout(hideT); hideT = setTimeout(() => $('#banner').classList.remove('show'), 6000);
+      const tables = [...document.querySelectorAll('.t.flagged h2')].map(h => h.textContent.replace(/\D/g, '')).sort((a, b) => a - b);
+      $('#toast-t').textContent = '86 ' + added.join(', ');
+      $('#toast-s').textContent = tables.length
+        ? `${tables.length} ticket${tables.length > 1 ? 's' : ''} flagged (table${tables.length > 1 ? 's' : ''} ${tables.join(', ')}). Guests offered a swap and a comp.`
+        : 'No open tickets affected.';
+      $('#toast').classList.add('show');
+      clearTimeout(hideT); hideT = setTimeout(() => $('#toast').classList.remove('show'), 7000);
     }, 150);
   }).observe($('#out'), { childList: true, characterData: true, subtree: true });
 
-  // QR overlay pointing at this server's order page.
   const url = location.origin + location.pathname.replace(/kitchen\/?$/, '') + '?table=4';
   try {
     const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
-    $('#qr-img').innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+    $('#qr-img').innerHTML = qr.createSvgTag({ cellSize: 8, margin: 1, scalable: true });
   } catch (e) {}
-  $('#qr-url').textContent = url;
-  const toggleQR = (on) => $('#qr').classList.toggle('show', on);
-  $('#qr-btn').onclick = () => toggleQR(true);
+  $('#qr-url').textContent = url.replace(/^https?:\/\//, '');
+  const toggleQR = on => $('#qr').classList.toggle('show', on);
+  $('#qr-btn').onclick = e => { e.preventDefault(); toggleQR(true); };
+  $('#nav-86').onclick = e => e.preventDefault();
   $('#qr').onclick = () => toggleQR(false);
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT') return;
