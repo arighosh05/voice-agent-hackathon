@@ -29,6 +29,7 @@ COMP = "a drink"
 
 orders: list[dict] = []
 eighty_sixed: set[str] = set()
+events: list[dict] = []  # guest replies for the kitchen page to read out: {"id", "text"}
 _next_id = 1
 
 
@@ -206,7 +207,7 @@ def order_status(oid: int):
 @router.get("/orders")
 def list_orders():
     done = sorted((o for o in orders if o["status"] == "done"), key=lambda o: o.get("done_at", 0), reverse=True)[:5]
-    return {"orders": _open(), "done": done, "eighty_sixed": sorted(eighty_sixed)}
+    return {"orders": _open(), "done": done, "eighty_sixed": sorted(eighty_sixed), "events": events[-20:]}
 
 
 @router.get("/board")
@@ -319,7 +320,7 @@ def send_offer(req: OfferIn):
                 else:
                     o["message"] = f"Sorry, we just ran out of the {name}. Please pick something else from the menu."
                 o.pop("pending", None)
-                o["offer"] = {"item": name, "swap": swap, "drink": req.drink}  # what the guest was actually offered
+                o["offer"] = {"item": name, "swap": swap, "drink": req.drink, "status": "sent"}  # what the guest was actually offered
                 for it in o["items"]:
                     if it["name"] == name:
                         it["swap_to"] = swap
@@ -381,6 +382,47 @@ def modify(req: ModIn):
         o["callout"] = _callout(o)
         o["changed"] = time.time()
     return {"summary": f"Updated table {req.table}: " + "; ".join(_say_item(i) for i in o["items"]) + ".", "ok": True}
+
+
+class ReplyIn(BaseModel):
+    order_id: int
+    accept: bool
+
+
+@router.post("/reply")
+def guest_reply(req: ReplyIn):
+    """Phone: the guest taps Yes or No on the kitchen's offer."""
+    with _lock:
+        o = next((o for o in _open() if o["id"] == req.order_id), None)
+        if not o or not o.get("offer") or o["offer"].get("status") != "sent":
+            raise HTTPException(409, "No offer waiting for a reply")
+        off = o["offer"]
+        swap, item = off.get("swap"), off["item"]
+        what = f"the {swap} swap" if swap else "the offer"
+        if req.accept:
+            off["status"] = "accepted"
+            for it in o["items"]:
+                if it["name"] == item:
+                    if swap:
+                        it["mods"] = [m for m in it["mods"] if m in MENU[swap]]
+                        it["was"] = item
+                        it["name"] = swap
+                    it.pop("swap_to", None)
+            if not swap and len(o["items"]) > 1:
+                o["items"] = [i for i in o["items"] if i["name"] != item]
+            if not any(i["name"] in eighty_sixed for i in o["items"]):
+                o["status"] = "fired" if o.get("started") else "new"
+            text = f"Table {o['table']} said yes to {what}." + (f" Their order is now: " + "; ".join(_say_item(i) for i in o["items"]) + "." if swap else "")
+        else:
+            off["status"] = "declined"
+            o["pending"] = item  # the chef can send a new offer
+            for it in o["items"]:
+                it.pop("swap_to", None)
+            text = f"Table {o['table']} said no to {what}. What should I offer them instead?"
+        o["callout"] = _callout(o)
+        o["changed"] = time.time()
+        events.append({"id": (events[-1]["id"] + 1) if events else 1, "text": text, "table": o["table"]})
+    return {"ok": True, "summary": text}
 
 
 @router.get("/table/{table}")
