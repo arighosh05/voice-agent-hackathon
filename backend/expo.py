@@ -148,9 +148,19 @@ def menu():
     return {"items": [{"name": n, "mods": m, "sold_out": n in eighty_sixed} for n, m in MENU.items()]}
 
 
+MAX_ITEMS_PER_ORDER = 12  # UI offers 5; guard against a scripted flood
+MAX_OPEN_ORDERS = 50      # keep the board (and the agent's callout queue) sane
+
+
 @router.post("/order")
 def place_order(req: OrderIn):
+    if not 1 <= req.table <= 99:
+        raise HTTPException(400, "unknown table")
+    if len(req.items) > MAX_ITEMS_PER_ORDER:
+        raise HTTPException(400, "too many items on one order")
     with _lock:
+        if sum(1 for o in orders if o["status"] != "done") >= MAX_OPEN_ORDERS:
+            raise HTTPException(429, "kitchen's slammed, give us a second")
         items = []
         for it in req.items:
             name = it.name.lower().strip()
