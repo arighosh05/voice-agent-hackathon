@@ -38,12 +38,17 @@ class Item(BaseModel):
 
 
 class OrderIn(BaseModel):
-    table: int
+    table: int | None = None  # omitted: the server seats the guest at the next table
     items: list[Item]
+
+
+FIRST_GUEST_TABLE = 10  # seeded demo tables are 2, 7 and 9
+_next_table = FIRST_GUEST_TABLE
 
 
 class FireIn(BaseModel):
     table: int
+    instead_of: int | None = None  # "start 7 instead of 4": pause 4, start 7 in one call
 
 
 class EightySixIn(BaseModel):
@@ -76,8 +81,10 @@ def _add(table: int, items: list[dict], age_s: int = 0) -> dict:
 def _seed():
     # Order ids keep counting up across resets so the kitchen page never mistakes
     # a new ticket for an old one it already called out.
+    global _next_table
     orders.clear()
     eighty_sixed.clear()
+    _next_table = FIRST_GUEST_TABLE
     # Pre-existing tickets so an 86 of salmon hits more than the judge's table.
     _add(7, [{"name": "salmon burger", "mods": []}, {"name": "fries", "mods": []}], age_s=300)
     _add(2, [{"name": "classic burger", "mods": ["add bacon"]}], age_s=240)
@@ -160,7 +167,8 @@ MAX_OPEN_ORDERS = 50      # keep the board (and the agent's callout queue) sane
 
 @router.post("/order")
 def place_order(req: OrderIn):
-    if not 1 <= req.table <= 99:
+    global _next_table
+    if req.table is not None and not 1 <= req.table <= 99:
         raise HTTPException(400, "unknown table")
     if len(req.items) > MAX_ITEMS_PER_ORDER:
         raise HTTPException(400, "too many items on one order")
@@ -177,8 +185,12 @@ def place_order(req: OrderIn):
             items.append({"name": name, "mods": [m for m in it.mods if m in MENU[name]]})
         if not items:
             raise HTTPException(400, "empty order")
-        o = _add(req.table, items)
-    return {"id": o["id"], "callout": o["callout"]}
+        table = req.table
+        if table is None:
+            table = _next_table
+            _next_table = _next_table + 1 if _next_table < 99 else FIRST_GUEST_TABLE
+        o = _add(table, items)
+    return {"id": o["id"], "callout": o["callout"], "table": table}
 
 
 @router.get("/order/{oid}")
@@ -215,11 +227,15 @@ def board():
 @router.post("/fire")
 def fire(req: FireIn):
     """Agent tool: mark the table's open ticket as fired."""
+    paused = ""
+    if req.instead_of is not None and req.instead_of != req.table:
+        h = hold(FireIn(table=req.instead_of))
+        paused = (h["summary"] + " ") if h["ok"] else ""
     with _lock:
         for o in sorted(_open(), key=lambda o: o["created"]):
             if o["table"] == req.table and o["status"] in ("new", "flagged"):
                 o["status"] = "fired"
-                return {"summary": f"Starting table {req.table}.", "ok": True}
+                return {"summary": f"{paused}Starting table {req.table}.", "ok": True}
     return {"summary": f"No open ticket for table {req.table}.", "ok": False}
 
 
