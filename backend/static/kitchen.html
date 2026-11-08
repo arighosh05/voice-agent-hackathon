@@ -59,7 +59,7 @@
   #start { width:100%; background:var(--fg); color:#fff; border-color:var(--fg); font-weight:600; }
   #start:hover { background:#27272a; }
   body.live #start { background:var(--card); color:var(--fg2); border-color:var(--line2); }
-  body.live #agent { display:none; }
+  body.live #agent, body.has-agent #agent { display:none; }
   #mute { display:none; width:100%; }
   body.live #mute, body.muted #mute { display:inline-flex; }
   body.muted #mute { background:#fef2f2; border-color:#fecaca; color:#b91c1c; font-weight:600; }
@@ -479,6 +479,8 @@ poll();
   });
   if (new URLSearchParams(location.search).has('qr')) toggleQR(true);
   if (new URLSearchParams(location.search).has('stage')) document.body.classList.add('stage');
+  // Hide the agent id field once an id is known (from ?agent= or a previous session).
+  addEventListener('load', () => document.body.classList.toggle('has-agent', !!$('#agent').value.trim()));
   document.addEventListener('keydown', e => {
     if (e.target.tagName !== 'INPUT' && (e.key === 's' || e.key === 'S')) document.body.classList.toggle('stage');
   });
