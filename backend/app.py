@@ -5,6 +5,8 @@ sandbox and return stdout so the agent can say the result out loud.
 Run: uvicorn app:app --reload --port 8000  (expose with ngrok/cloudflared)
 """
 import os
+import subprocess
+import sys
 import time
 
 import certifi
@@ -57,6 +59,11 @@ def run(req: RunRequest, x_tool_secret: str | None = Header(default=None)):
     if secret and x_tool_secret != secret:
         raise HTTPException(status_code=401, detail="bad secret")
     t0 = time.time()
+    if os.getenv("RUN_LOCAL") == "1":
+        # Deployed inside a Daytona sandbox already: run the code right here.
+        p = subprocess.run([sys.executable, "-c", req.code], capture_output=True, text=True, timeout=30)
+        return {"exit_code": p.returncode, "output": (p.stdout + p.stderr)[:2000],
+                "ms": int((time.time() - t0) * 1000)}
     sb = sandbox()
     try:
         resp = sb.process.code_run(req.code)
