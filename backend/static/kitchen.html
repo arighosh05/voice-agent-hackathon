@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Expo · Line board</title>
+<title>Expo · Kitchen board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -70,7 +70,7 @@
   .livepill i { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px rgba(34,197,94,.15); }
   .spacer { flex:1; }
   #out:empty { display:none; }
-  #out { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 10px; border-radius:7px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-size:12px; font-weight:600; text-transform:capitalize; }
+  #out { text-transform:none !important; display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 10px; border-radius:7px; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-size:12px; font-weight:600; text-transform:capitalize; }
 
   .content { flex:1; min-height:0; display:grid; grid-template-columns:1fr 340px; }
   .work { min-width:0; overflow:auto; padding:20px; display:flex; flex-direction:column; gap:20px; }
@@ -149,7 +149,7 @@
   #toast { position:fixed; right:20px; bottom:20px; z-index:20; width:380px; background:var(--card); border:1px solid rgba(239,68,68,.45); border-radius:12px; padding:14px 16px; box-shadow:0 12px 32px rgba(16,24,40,.12), 0 2px 6px rgba(16,24,40,.06); display:flex; gap:12px; transform:translateY(16px); opacity:0; visibility:hidden; transition:all .3s cubic-bezier(.2,.9,.3,1); }
   #toast.show { transform:none; opacity:1; visibility:visible; }
   #toast .ic { width:28px; height:28px; border-radius:7px; background:rgba(239,68,68,.12); color:var(--red); display:grid; place-items:center; flex:none; }
-  #toast b { display:block; font-size:14px; font-weight:600; text-transform:capitalize; }
+  #toast b { display:block; font-size:14px; font-weight:600; }
   #toast span { display:block; font-size:13px; color:var(--muted); margin-top:2px; }
   #qr { position:fixed; inset:0; z-index:30; display:none; place-items:center; background:rgba(9,9,11,.35); backdrop-filter:blur(4px); }
   #qr.show { display:grid; }
@@ -184,8 +184,8 @@
   <div class="ws"><div class="logo">E</div><div><b>Expo</b><small>Flat Top Burgers</small></div></div>
   <div class="navs">
     <div class="lbl">Service</div>
-    <a class="on" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg>Line board<span class="k" id="nav-open">0</span></a>
-    <a href="#" id="nav-86"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>86 list<span class="k" id="nav-86n">0</span></a>
+    <a class="on" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg>Kitchen board<span class="k" id="nav-open">0</span></a>
+    <a href="#" id="nav-86"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>Sold out<span class="k" id="nav-86n">0</span></a>
     <a href="#" id="qr-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/></svg>Guest ordering<span class="k">Q</span></a>
   </div>
   <div class="grow"></div>
@@ -200,23 +200,23 @@
 
 <div class="main">
   <header class="top">
-    <div class="crumb">Flat Top Burgers<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg><b>Line board</b><span class="livepill"><i></i>Live</span></div>
+    <div class="crumb">Flat Top Burgers<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg><b>Kitchen board</b><span class="livepill"><i></i>Live</span></div>
     <span class="spacer"></span>
     <span id="out"></span>
-    <button class="btn" id="test" title="Inject a fake ticket into the conversation">Test callout</button>
+    <button class="btn" id="test" title="Inject a fake order into the conversation">Test announcement</button>
     <button class="btn" id="reset" title="Reset board to seeded tickets"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>Reset</button>
   </header>
   <div class="content">
     <div class="work">
       <div class="stats">
-        <div class="stat"><div class="l">Open tickets</div><div class="v" id="s-open">0</div></div>
-        <div class="stat"><div class="l">Oldest ticket</div><div class="v mono" id="s-old">0:00</div></div>
-        <div class="stat" id="s-86-wrap"><div class="l">86'd items</div><div class="v" id="s-86">0</div></div>
+        <div class="stat"><div class="l">Open orders</div><div class="v" id="s-open">0</div></div>
+        <div class="stat"><div class="l">Oldest order</div><div class="v mono" id="s-old">0:00</div></div>
+        <div class="stat" id="s-86-wrap"><div class="l">Sold-out items</div><div class="v" id="s-86">0</div></div>
         <div class="stat"><div class="l">Guests notified</div><div class="v" id="s-notified">0</div></div>
       </div>
       <section id="board"></section>
     </div>
-    <aside><div class="ah"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Live transcript<span>Expo ⇄ Line</span></div><div id="log"></div></aside>
+    <aside><div class="ah"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Live transcript<span>Expo ⇄ Cook</span></div><div id="log"></div></aside>
   </div>
 </div>
 
@@ -236,7 +236,7 @@ $('#agent').value = params.get('agent') || store.get('expo-agent') || '';
 let convo = null, mode = 'listening', seen = null;
 // Display-only telemetry: time from a turn starting to Expo speaking, and tool call timings.
 let turn = null; const toolT = new Map();
-const TOOL = { get_board: 'Read board', fire_ticket: 'Fire ticket', eighty_six_item: '86 item', hold_ticket: 'Hold ticket', restock_item: 'Restock', bump_ticket: 'Bump ticket' };
+const TOOL = { get_board: 'Read orders', fire_ticket: 'Start cooking', eighty_six_item: 'Mark sold out', hold_ticket: 'Hold order', restock_item: 'Back in stock', bump_ticket: 'Mark done' };
 function metric(html, cls) {
   const d = document.createElement('div'); d.className = 'line chip ' + cls; d.innerHTML = html; $('#log').prepend(d);
 }
@@ -276,7 +276,7 @@ function flush() {
   if (!convo || mode === 'speaking' || !queue.length) return;
   const text = queue.shift();
   convo.sendUserMessage(`[NEW TICKET] ${text}`);
-  turn = { at: performance.now(), what: 'Called out' };
+  turn = { at: performance.now(), what: 'Announced' };
   log('', 'ticket sent to Expo: ' + text, 'sys');
 }
 setInterval(flush, 300);
@@ -341,7 +341,7 @@ function render(orders, out = []) {
   const prev = new Map([...board.querySelectorAll('.t')].map(c => [c.dataset.id, c.dataset.status]));
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const EM = { 'classic burger': '🍔', 'salmon burger': '🐟', 'veggie burger': '🌱', 'chicken sandwich': '🍗', 'fries': '🍟' };
-  const COLS = [['new', 'New'], ['fired', 'Firing'], ['flagged', 'Needs attention']];
+  const COLS = [['new', 'New'], ['fired', 'Cooking'], ['flagged', 'Needs attention']];
   const now = Date.now() / 1000;
   const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   const sorted = [...orders].sort((a, b) => a.created - b.created);
@@ -352,7 +352,7 @@ function render(orders, out = []) {
     col.className = 'col ' + key;
     col.innerHTML = `<div class="col-h"><span class="ic"></span>${name}<span class="n">${list.length}</span></div><div class="col-b"></div>`;
     const body = col.lastChild;
-    if (!list.length) body.innerHTML = `<div class="empty">No tickets</div>`;
+    if (!list.length) body.innerHTML = `<div class="empty">No orders</div>`;
     for (const o of list) {
       const el = document.createElement('div');
       el.dataset.id = o.id; el.dataset.status = o.status;
@@ -360,14 +360,14 @@ function render(orders, out = []) {
       el.className = 't ' + o.status + (prev.size && was === undefined ? ' fresh' : '')
         + (o.status === 'flagged' && was && was !== 'flagged' ? ' hit' : '');
       const secs = Math.max(0, now - o.created), mins = secs / 60;
-      const tag = o.status === 'fired' ? '<span class="tag amber">Fired</span>' : o.status === 'flagged' ? '<span class="tag red">86</span>' : '<span class="tag gray">New</span>';
+      const tag = o.status === 'fired' ? '<span class="tag amber">Cooking</span>' : o.status === 'flagged' ? '<span class="tag red">Sold out</span>' : '<span class="tag gray">New</span>';
       const swap = (o.message || '').match(/swap in an? ([a-z ]+?) at no charge/);
       el.innerHTML = `<div class="h"><span class="id">#${String(o.id).padStart(3, '0')}</span>${tag}<span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${fmt(secs)}</span></div>
         <h2>Table ${o.table}</h2>
         <ul>${o.items.map(i => { const x = o.status === 'flagged' && out.includes(i.name);
           return `<li class="${x ? 'out' : ''}"><span class="em">${EM[i.name] || '🍽️'}</span><div><div class="nm">${esc(i.name)}</div>${
             i.mods.length ? `<div class="mods">${i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}</div></li>`; }).join('')}</ul>
-        ${o.status === 'flagged' ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest notified${swap ? ' · swap to ' + esc(swap[1]) : ''} · drink comped</div>` : ''}`;
+        ${o.status === 'flagged' ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest texted${swap ? ' · free swap to ' + esc(swap[1]) : ''} · free drink</div>` : ''}`;
       body.append(el);
     }
     board.append(col);
@@ -388,7 +388,7 @@ async function poll() {
     if (seen === null) seen = new Set(d.orders.map(o => o.id)); // don't call out what's already on the board
     for (const o of d.orders) if (!seen.has(o.id)) { seen.add(o.id); announce(o.callout); }
     render(d.orders, d.eighty_sixed);
-    $('#out').textContent = d.eighty_sixed.length ? '86: ' + d.eighty_sixed.join(', ') : '';
+    $('#out').textContent = d.eighty_sixed.length ? 'Sold out: ' + d.eighty_sixed.join(', ') : '';
   } catch (e) {}
   setTimeout(poll, 1000);
 }
@@ -421,16 +421,16 @@ poll();
   // 86 toast when a new item appears in #out.
   let known = new Set(), hideT = null;
   new MutationObserver(() => {
-    const items = $('#out').textContent.replace(/^86:\s*/, '').split(',').map(s => s.trim()).filter(Boolean);
+    const items = $('#out').textContent.replace(/^Sold out:\s*/, '').split(',').map(s => s.trim()).filter(Boolean);
     const added = items.filter(i => !known.has(i));
     known = new Set(items);
     if (!added.length || performance.now() < 2500) return; // skip 86s already on the board at load
     setTimeout(() => {
       const tables = [...document.querySelectorAll('.t.flagged h2')].map(h => h.textContent.replace(/\D/g, '')).sort((a, b) => a - b);
-      $('#toast-t').textContent = '86 ' + added.join(', ');
+      const nm = added.join(', '); $('#toast-t').textContent = nm[0].toUpperCase() + nm.slice(1) + (added.length > 1 ? ' are' : ' is') + ' sold out';
       $('#toast-s').textContent = tables.length
-        ? `${tables.length} ticket${tables.length > 1 ? 's' : ''} flagged (table${tables.length > 1 ? 's' : ''} ${tables.join(', ')}). Guests offered a swap and a comp.`
-        : 'No open tickets affected.';
+        ? `${tables.length} order${tables.length > 1 ? 's' : ''} affected (table${tables.length > 1 ? 's' : ''} ${tables.join(', ')}). Guests texted a free swap and a free drink.`
+        : 'No open orders affected.';
       $('#toast').classList.add('show');
       clearTimeout(hideT); hideT = setTimeout(() => $('#toast').classList.remove('show'), 7000);
     }, 150);
