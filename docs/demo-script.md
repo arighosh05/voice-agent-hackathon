@@ -6,15 +6,15 @@ Draft. URLs live in `LIVE.md`. Before every run: hit **Reset** on the kitchen pa
 
 | Time | On screen | Say / do | Rubric beat |
 |---|---|---|---|
-| 0:00–0:15 | Kitchen board, tables 7, 2, 9 open | "This is Marco. He's the only cook on the line at a small burger spot tonight. No expediter, hands in the fryer, and every ticket that prints is one he has to stop and read. Expo is the expediter he doesn't have." | Named user + problem |
-| 0:15–0:25 | Click **Start**. Expo: "Expo's up. Send 'em." | "Expo is an ElevenLabs voice agent. The kitchen it manages, orders, tickets, inventory, runs in a Daytona sandbox." | Uses Daytona |
-| 0:25–0:40 | Phone: order salmon burger, extra cheese, no pickles, table 4 | (stop talking) Expo, unprompted, about a second later: "Ordering, table 4: salmon burger, extra cheese, no pickles." | Works live: proactive callout |
-| 0:40–0:55 | Board | Marco: "What's on the board?" Expo starts reading. Marco cuts in: "Fire table 4." Expo: "Firing table 4." Ticket turns fired. | Interruption + real tool call |
+| 0:00–0:15 | Kitchen line board, tables 7, 2, 9 in New | "This is Marco. He's the only cook on the line at a small burger spot tonight. No expediter, hands in the fryer, and every ticket that prints is one he has to stop and read. Expo is the expediter he doesn't have." | Named user + problem |
+| 0:15–0:25 | Click **Start Expo**. Expo: "Expo's up. Send 'em." | "Expo is an ElevenLabs voice agent. The kitchen it manages, orders, tickets, inventory, runs in a Daytona sandbox." | Uses Daytona |
+| 0:25–0:40 | Press **Q** for the Guest ordering QR; phone scans it and orders salmon burger, extra cheese, no pickles | (stop talking) Expo, unprompted, about a second later: "Ordering, table 4: salmon burger, extra cheese, no pickles." | Works live: proactive callout |
+| 0:40–0:55 | Board | Marco: "What's on the board?" Expo starts reading. Marco cuts in: "Fire table 4." Expo: "Firing table 4." Ticket moves to the Firing column. | Interruption + real tool call |
 | 0:55–1:05 | Board | Marco: "No wait, fire 7 instead." Expo holds 4, fires 7. | Handles curveballs |
-| 1:05–1:20 | Board, then phone close-up | Marco: "We're out of salmon." Expo: "86 salmon burger. That hits tables 4, 7 and 9. I've offered them a chicken sandwich and comped a drink." Tickets flag; the phone shows the apology and comp. | Finish line: real action reaches the customer |
+| 1:05–1:20 | Board, then phone close-up | Marco: "We're out of salmon." Expo: "86 salmon burger. That hits tables 4, 7 and 9. I've offered them a chicken sandwich and comped a drink." Tickets move to Needs attention with "Guest notified · drink comped"; the 86 list counter ticks up; the phone shows "An item is unavailable" with the swap and a comped drink. | Finish line: real action reaches the customer |
 | 1:20–1:30 | Kitchen + phone side by side | "Every order called out, and one sentence from Marco handled three tables and three customers without him touching a screen." | Solves the problem |
 
-Notes: keep the mic close and pause after each line so the reply lands inside ~1.5s. If the callout doesn't fire, say "What's new?" (Expo reads the newest ticket) and keep going.
+Notes: keep the mic close and pause after each line so the reply lands inside ~1.5s. Orders placed before Start are still called out when Expo connects. If a callout doesn't fire, say "What's new?" (Expo reads the newest ticket) and keep going.
 
 ## 2. Submission text
 
