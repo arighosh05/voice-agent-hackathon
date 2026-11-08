@@ -12,7 +12,7 @@ import certifi
 # python.org macOS builds ship without root certs; use certifi's bundle.
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 
-from daytona import Daytona
+from daytona import CreateSandboxFromSnapshotParams, Daytona
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
@@ -25,12 +25,25 @@ _sandbox = None  # reuse one warm sandbox to keep voice latency low
 def sandbox():
     global _sandbox
     if _sandbox is None:
-        _sandbox = Daytona().create()  # reads DAYTONA_API_KEY from env
+        _sandbox = Daytona().create(
+            CreateSandboxFromSnapshotParams(auto_stop_interval=15)  # minutes idle
+        )  # reads DAYTONA_API_KEY from env
     return _sandbox
 
 
 class RunRequest(BaseModel):
     code: str
+
+
+@app.on_event("shutdown")
+def cleanup():
+    # Never leave a sandbox running after the server stops.
+    global _sandbox
+    if _sandbox is not None:
+        try:
+            _sandbox.delete()
+        finally:
+            _sandbox = None
 
 
 @app.get("/health")
