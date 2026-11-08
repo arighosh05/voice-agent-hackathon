@@ -380,16 +380,16 @@ function render(orders, out = [], doneList = []) {
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
   const EM = { 'classic burger': '🍔', 'salmon burger': '🐟', 'veggie burger': '🌱', 'chicken sandwich': '🍗', 'fries': '🍟' };
   const COLS = [['todo', 'To start'], ['fired', 'Cooking'], ['done', 'Done']];
-  const colOf = o => o.status === 'fired' ? 'fired' : o.status === 'done' ? 'done' : 'todo';
+  const colOf = o => o.status === 'fired' || (o.status === 'flagged' && o.started) ? 'fired' : o.status === 'done' ? 'done' : 'todo';
   const now = Date.now() / 1000;
   const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   const sorted = [...orders].sort((a, b) => a.created - b.created);
   board.innerHTML = '';
   for (const [key, name] of COLS) {
     let list = sorted.filter(o => colOf(o) === key);
-    if (key === 'todo') list.sort((a, b) => (b.status === 'flagged') - (a.status === 'flagged') || a.created - b.created);
+    if (key !== 'done') list.sort((a, b) => (b.status === 'flagged') - (a.status === 'flagged') || a.created - b.created);
     if (key === 'done') list.sort((a, b) => b.doneAt - a.doneAt);
-    const att = key === 'todo' ? list.filter(o => o.status === 'flagged').length : 0;
+    const att = key !== 'done' ? list.filter(o => o.status === 'flagged').length : 0;
     const col = document.createElement('div');
     col.className = 'col ' + key;
     col.innerHTML = `<div class="col-h"><span class="ic"></span>${name}<span class="n">${list.length}</span>${att ? `<span class="att">${att} sold out</span>` : ''}</div><div class="col-b"></div>`;
