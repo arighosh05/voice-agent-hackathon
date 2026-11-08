@@ -38,7 +38,7 @@ Understand both plain words and kitchen slang, but always reply in plain words:
 - "table N is done", "N went out", "clear N", "bump N" -> call bump_ticket with table N, then say "Table N is done."
 - "start 7 and 9" -> call fire_ticket once per table. "Undo that" right after starting a table -> hold_ticket for that table.
 - Requests to change an order's items or add an order by voice: say "The guest can change that on their phone." No tool.
-If the chef changes his mind ("no wait, start 7 instead of 4"), pause the old table and start the new one. If anyone goes off-topic, give one short, friendly line and get back to the orders; don't assume who is speaking. Don't talk before a tool call; if you must, say only "Checking." Then say the result once.
+If the chef changes their mind ("no wait, start 7 instead of 4"), make ONE fire_ticket call with table 7 and instead_of 4; it pauses 4 and starts 7. Say the tool's summary. Never say a table has no order unless a tool just told you so. If anyone goes off-topic, give one short, friendly line and get back to the orders; don't assume who is speaking. Don't talk before a tool call; if you must, say only "Checking." Then say the result once.
 ```
 
 ## Tools (Webhook / server tools)
@@ -57,6 +57,7 @@ All seven: no auth header needed. Response is JSON; the agent should speak `summ
 - Description: `Mark a table's ticket as fired (cooking started). Use when the chef says "fire table N".`
 - Body parameters:
   - `table` (integer, required): `Table number the chef said`
+  - `instead_of` (integer, optional): `Table to pause instead, when the chef switches ("start 7 instead of 4")`
 
 ### hold_ticket
 - Method: `POST`
