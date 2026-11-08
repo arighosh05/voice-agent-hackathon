@@ -91,13 +91,27 @@ def _open():
     return [o for o in orders if o["status"] != "done"]
 
 
+# Words a cook might say for each item, checked after exact/substring matches.
+ALIASES = {
+    "salmon burger": ["salmon", "fish"],
+    "chicken sandwich": ["chicken", "chix"],
+    "veggie burger": ["veggie", "veg", "vegetarian", "plant", "beyond", "impossible"],
+    "classic burger": ["classic", "beef", "cheeseburger", "hamburger", "patty", "patties"],
+    "fries": ["fry", "fries", "chips", "potato", "potatoes"],
+}
+
+
 def _match_item(text: str) -> str | None:
-    t = re.sub(r"\b(the|all|our|we're|were|out|of|on|86|eighty[- ]six)\b", " ", text.lower())
-    t = " ".join(t.split()).rstrip("s")
-    if not t:
+    t = re.sub(r"\b(the|all|our|any|more|we're|were|we|are|out|of|on|86|eighty[- ]six|no)\b", " ", text.lower())
+    t = " ".join(re.sub(r"[^a-z ]", " ", t).split())
+    if not t or t.rstrip("s") == "burger":  # ambiguous: let the agent ask which one
         return None
     for name in MENU:
-        if t == name or t in name or name in t:
+        if t == name or t.rstrip("s") in name or name in t:
+            return name
+    words = {w for w in t.split()} | {w.rstrip("s") for w in t.split()}
+    for name, al in ALIASES.items():
+        if words & set(al):
             return name
     return None
 
@@ -209,7 +223,7 @@ def eighty_six(req: EightySixIn):
     """Agent tool: mark an item out, flag affected tickets, message those customers."""
     name = _match_item(req.item)
     if not name:
-        return {"summary": f"I don't have {req.item} on the menu. Menu is: " + ", ".join(MENU) + ".", "ok": False}
+        return {"summary": f"Not sure which item '{req.item}' is. Ask Marco which one: " + ", ".join(MENU) + ".", "ok": False}
     swap = SWAP.get(name, "classic burger")
     with _lock:
         eighty_sixed.add(name)
