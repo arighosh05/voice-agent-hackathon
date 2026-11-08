@@ -17,9 +17,11 @@ URLs are in `LIVE.md`.
 | 0:25–0:40 | Hold up your phone ("You're at table 10") and order a salmon burger with extra cheese and no pickles | "I'm a guest, ordering from my table." (stop talking) About a second later, without being asked, CallOut says: "New order, table 10: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
 | 0:40–0:55 | Board (unmute) | Line Chef: "What's on the board?" CallOut starts reading. Cut in: "Start cooking table 10." CallOut: "Starting table 10." The order moves to Cooking. Mute, then point at the transcript chips: "Those are real tool calls to the Daytona backend, timed live." | Interruption + real tool call, visible |
 | 0:55–1:05 | Board (unmute) | Line Chef: "No wait, start 7 instead of 10." CallOut: "Pausing table 10. Starting table 7." | Handles a change of mind |
-| 1:05–1:25 | Board | Line Chef: "We're out of salmon." CallOut: "Salmon burger is sold out. That affects tables 7, 9 and 10. Should I text them a free chicken sandwich swap and a free drink?" The three orders get a red outline and "Waiting on chef's OK" right where they are. Line Chef: "Yes, send it." CallOut: "Texted tables 7, 9 and 10: a free swap to a chicken sandwich and a drink on us." The orders now show "Guest texted". | Finish line, with the chef deciding |
+| 1:05–1:25 | Board | Line Chef: "We're out of salmon." CallOut: "Salmon burger is sold out. That affects tables 7, 9 and 10. Should I text them a free chicken sandwich swap and a free drink?" The three orders get a red outline and "Waiting on chef's OK" right where they are. Line Chef: "Yes, send it." CallOut: "Texted tables 7, 9 and 10: a free swap to a chicken sandwich and a drink on us." The orders now show "Guest texted", with "→ Chicken Sandwich" under the struck-through salmon burger. | Finish line, with the chef deciding |
 | 1:25–1:35 | Phone close-up (mute) | The order page shows "An item is unavailable" with the free swap and a free drink. Tap **Check status**, type 10, and tap **Check** to see the same order and offer. "The guest sees it right away, and can check on their table at any time." | A real action reaches the customer |
 | 1:35–1:45 | Kitchen and phone side by side | "Every order read out loud, and one sentence plus a yes from the Line Chef took care of three tables. The chef stays in charge of what customers get." | Solves the problem |
+
+Optional extra beat (about 5s, if you have time): "No bacon on 2." CallOut updates table 2 and its card gets a blue "Updated" badge.
 
 Other ways to answer the offer: "Offer the veggie burger instead" texts that swap, "Just the drink" skips the swap, and "No, don't text them" gets "OK, I won't text them."
 
@@ -63,7 +65,9 @@ All of these passed against the live agent.
 | "Table 2 is done" | "Table 2 is done." and the order moves to Done | Click Mark done |
 | "Start 7 and 9" | Starts both | One at a time |
 | "Undo that" right after a start | Pauses the last table it started | "Pause N." |
-| "Table 10 wants no cheese" | "The guest can change that on their phone." | |
+| "No bacon on 2" / "take the pickles off 9" / "add cheese to 10" | Changes the add-on: "Updated table 2: classic burger." The card gets a blue "Updated" badge | Say one change at a time |
+| Change an add-on that isn't on the order ("no onions on 2") | Says it couldn't make that change and reads the order back | Nothing needed |
+| Swap a whole item by voice ("table 10 wants fries instead") | "The guest can change that on their phone." | |
 | Chatty line ("the salmon's selling great") | Doesn't mark anything sold out | |
 | Off-topic ("what's the weather?", "tell me a joke") | One friendly line, then back to the board. It doesn't assume who is speaking | Move to the next beat |
 | Asks "is this scripted?" | Let the judge talk to CallOut themselves, or place their own order | |
