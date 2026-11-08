@@ -57,5 +57,5 @@ All of these passed against the live agent (PR #14).
 | Long silence | Expo stays quiet, no "still there?" | |
 | "Salmon's back" after an 86 | Restocks it; guests already messaged keep their offer | |
 | "Table 2 is out" / "bump 2" | Clears table 2 from the board | |
-| Venue wifi or WebRTC fails | Reload the kitchen page with `&conn=websocket` | Order from a second laptop tab |
+| Venue wifi drops or Expo goes silent | Reload the kitchen page and click Start Expo again (it connects over websocket by default) | Order from a second laptop tab |
 | Daytona sandbox is cold or slow | Load the kitchen page once before going on | Wait a beat, re-ask |
