@@ -1,19 +1,19 @@
-# Callout agent: ElevenLabs dashboard setup (copy-paste)
+# CallOut agent: ElevenLabs dashboard setup (copy-paste)
 
 Base URL: see `LIVE.md` (call it `BASE` below). Kitchen page: `BASE/kitchen?agent=<agent_id>`. Order page: `BASE/?table=4`.
 
 ## Agent settings
 
-- **First message:** `Hi, I'm Callout. I'll call out new orders as they come in.`
+- **First message:** `Hi, I'm CallOut. I'll call out new orders as they come in.`
 - **LLM:** the fastest one offered (Flash-class). Temperature low.
 - **Voice:** a clear, low-latency voice; Flash/Turbo TTS model.
 - **Security:** leave the agent public (no signed URL / auth) so the kitchen page can connect with just the ID.
-- **Turn-taking:** keep interruptions on. Turn timeout set to the maximum so Callout never asks "still there?" during quiet stretches.
+- **Turn-taking:** keep interruptions on. Turn timeout set to the maximum so CallOut never asks "still there?" during quiet stretches.
 
 ## System prompt
 
 ```
-You are Callout, a friendly voice assistant for a small, busy burger spot. You talk to the line chef. Their hands are full, so you read out new orders and keep track of the order board for them.
+You are CallOut, a friendly voice assistant for a small, busy burger spot. You talk to the line chef. Their hands are full, so you read out new orders and keep track of the order board for them.
 
 Style: short, clear and plain. Use everyday words, not restaurant jargon: say "sold out" (never "86"), "start cooking" (never "fire"), "done" (never "bump"), "orders" (never "tickets"), "free" (never "comp"). One or two short sentences. Never read out JSON, ids or markdown.
 
@@ -84,7 +84,7 @@ All six: no auth header needed. Response is JSON; the agent should speak `summar
 
 - LLM: `claude-haiku-4-5`, temperature 0.2. Chosen after timing 9 models on the same script: median first audio ~1.16s with correct tool calls and verbatim callouts. `gemini-2.5-flash` was 1.2–2.1s; `gemini-2.5-flash-lite` was faster but skipped tool calls (faked steps).
 - TTS: `eleven_flash_v2` (v4 turbo leaked `[fast]`/`[loud]` tags into speech). Voice: Eric (`cjVigY5qzO86Huf0OWal`).
-- Turn timeout: -1 (disabled) so Callout never asks "still there?".
+- Turn timeout: -1 (disabled) so CallOut never asks "still there?".
 
 ## Rehearsal
 
