@@ -217,7 +217,7 @@ def board():
         return {"summary": "Board's clear.", "tickets": []}
     parts = []
     for o in tickets:
-        tag = {"new": "", "fired": ", cooking", "flagged": ", has a sold-out item" + (", guest not texted yet" if o.get("pending") else "")}[o["status"]]
+        tag = {"new": "", "fired": ", cooking", "flagged": (", cooking" if o.get("started") else "") + ", has a sold-out item" + (", guest not texted yet" if o.get("pending") else "")}[o["status"]]
         parts.append(f"{o['table']}{tag}: " + "; ".join(_say_item(i) for i in o["items"]))
     oldest = int((time.time() - tickets[0]["created"]) // 60)
     wait = f" Oldest is table {tickets[0]['table']}, {oldest} minutes." if oldest >= 1 else ""
@@ -236,6 +236,7 @@ def fire(req: FireIn):
         for o in sorted(_open(), key=lambda o: o["created"]):
             if o["table"] == req.table and o["status"] in ("new", "flagged"):
                 o["status"] = "fired"
+                o["started"] = True  # stays true if a sold-out item later flags it
                 return {"summary": f"{paused}Starting table {req.table}.", "ok": True}
     return {"summary": f"No open ticket for table {req.table}.", "ok": False}
 
@@ -245,7 +246,8 @@ def hold(req: FireIn):
     """Agent tool: undo a fire (Marco changed his mind)."""
     with _lock:
         for o in sorted(_open(), key=lambda o: -o["created"]):
-            if o["table"] == req.table and o["status"] == "fired":
+            if o["table"] == req.table and (o["status"] == "fired" or o.get("started")):
+                o["started"] = False
                 o["status"] = "flagged" if (o["message"] or o.get("pending")) else "new"
                 return {"summary": f"Pausing table {req.table}.", "ok": True}
     return {"summary": f"Table {req.table} wasn't cooking yet.", "ok": False}
@@ -344,7 +346,7 @@ def restock(req: EightySixIn):
         for o in _open():  # back before anyone was texted: those orders are fine again
             if o.get("pending") == name:
                 o.pop("pending", None)
-                o["status"] = "new"
+                o["status"] = "fired" if o.get("started") else "new"
     return {"summary": f"{name.capitalize()} is back on the menu.", "ok": True}
 
 
