@@ -140,6 +140,7 @@
   .tag { display:inline-flex; align-items:center; gap:5px; height:20px; padding:0 7px; border-radius:5px; font-size:11px; font-weight:600; border:1px solid; }
   .tag.red { color:#b91c1c; background:#fef2f2; border-color:#fecaca; }
   .tag.amber { color:#b45309; background:#fffbeb; border-color:#fde68a; }
+  .tag.blue { color:#1d4ed8; background:#eff6ff; border-color:#bfdbfe; vertical-align:4px; margin-left:6px; }
   .tag.gray { color:var(--muted); background:var(--card-h); border-color:var(--line2); }
   .t.fired { border-color:#fcd34d; }
   .t.flagged { border-color:#fca5a5; box-shadow:0 0 0 1px rgba(239,68,68,.12), 0 6px 20px rgba(239,68,68,.10); }
@@ -422,15 +423,18 @@ function render(orders, out = [], doneList = []) {
       const tag = o.status === 'fired' ? '<span class="tag amber">Cooking</span>' : o.status === 'flagged' ? '<span class="tag red">Sold out</span>' : o.status === 'done' ? '<span class="tag green">Done</span>' : '<span class="tag gray">New</span>';
       // What the guest was actually texted, parsed from the message the server sent.
       const msgTxt = o.message || '';
-      const swapTo = (msgTxt.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1] || null;
-      const drink = /drink is on us/i.test(msgTxt);
+      // Prefer the structured offer from the server; fall back to parsing the texted message.
+      const swapTo = o.offer ? (o.offer.swap || null) : ((msgTxt.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1] || null);
+      const drink = o.offer ? !!o.offer.drink : /drink is on us/i.test(msgTxt);
+      const swapFor = i => i.swap_to !== undefined ? i.swap_to : (swapTo && msgTxt.includes('out of the ' + i.name) ? swapTo : null);
+      const changed = o.changed && (Date.now() / 1000 - o.changed) < 90;
       const texted = [swapTo ? 'free swap to ' + esc(swapTo) : '', drink ? 'free drink' : '',
         !swapTo && !drink && msgTxt ? 'asked to pick something else' : ''].filter(Boolean).join(' + ');
       el.innerHTML = `<div class="h"><span class="id">#${String(o.id).padStart(3, '0')}</span>${tag}<span class="age ${mins >= 10 ? 'late' : mins >= 5 ? 'warn' : ''}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${fmt(secs)}</span></div>
-        <h2>Table ${o.table}</h2>
+        <h2>Table ${o.table}${changed ? ' <span class="tag blue">Updated</span>' : ''}</h2>
         <ul>${o.items.map(i => { const x = o.status === 'flagged' && (out.includes(i.name) || o.pending === i.name || msgTxt.includes('out of the ' + i.name));
           return `<li class="${x ? 'out' : ''}"><span class="em">${EM[i.name] || '🍽️'}</span><div><div class="nm">${esc(i.name)}</div>${
-            x && swapTo && msgTxt.includes('out of the ' + i.name) ? `<div class="swapto"><span>→</span>${EM[swapTo] || ''} ${esc(swapTo)}</div>` : ''}${
+            x && swapFor(i) ? `<div class="swapto"><span>→</span>${EM[swapFor(i)] || ''} ${esc(swapFor(i))}</div>` : ''}${
             i.mods.length ? `<div class="mods">${i.mods.map(m => `<span class="mod">${esc(m)}</span>`).join('')}</div>` : ''}</div></li>`; }).join('')}</ul>
         ${o.status === 'flagged' ? (o.message
           ? `<div class="foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Guest texted: ${texted}</div>`
