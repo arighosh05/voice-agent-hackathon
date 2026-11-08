@@ -15,7 +15,7 @@ import certifi
 
 os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 
-from daytona import CreateSandboxFromSnapshotParams, Daytona, SessionExecuteRequest
+from daytona import CreateSandboxFromSnapshotParams, Daytona, ListSandboxesQuery, SessionExecuteRequest
 from dotenv import load_dotenv
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -28,9 +28,7 @@ d = Daytona()
 
 
 def find_sandbox():
-    res = d.list(labels=LABEL)
-    items = getattr(res, "items", res)
-    return items[0] if items else None
+    return next(iter(d.list(ListSandboxesQuery(labels=LABEL))), None)
 
 
 sb = find_sandbox()
