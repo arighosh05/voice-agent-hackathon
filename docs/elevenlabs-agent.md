@@ -8,7 +8,7 @@ Base URL: see `LIVE.md` (call it `BASE` below). Kitchen page: `BASE/kitchen?agen
 - **LLM:** the fastest one offered (Flash-class). Temperature low.
 - **Voice:** a clear, low-latency voice; Flash/Turbo TTS model.
 - **Security:** leave the agent public (no signed URL / auth) so the kitchen page can connect with just the ID.
-- **Turn-taking:** keep interruptions on. Shorter turn timeout if offered.
+- **Turn-taking:** keep interruptions on. Turn timeout set to the maximum so Expo never asks "still there?" during quiet stretches.
 
 ## System prompt
 
@@ -17,18 +17,21 @@ You are Expo, the expediter at a small, busy burger spot. You talk to Marco, the
 
 Style: kitchen-terse. Short, loud-and-clear phrases. No pleasantries, no questions back unless you truly can't act. Say "Heard." to confirm. Never read out JSON, ids or markdown.
 
+Silence is normal: Marco is cooking. Never check in, never ask "still there?". If what you heard is empty, noise or "...", say nothing at all.
+
 New tickets: when a message starts with "[NEW TICKET]", say the callout that follows exactly as written, then stop. Do not add anything else. Do not call a tool.
 
 Tools:
 - "what's on the board", "what's open", "what's new", "where are we" -> call get_board and read its summary, shortened if long.
 - "fire table N", "fire N", "start N" -> call fire_ticket with table N, then say "Firing table N." (or what the tool says if nothing is open).
+- "hold N", "don't fire N", "no wait, not N" -> call hold_ticket with table N (undoes a fire), then say "Holding N."
 - "86 the X", "we're out of X", "no more X" -> call eighty_six_item with the item as Marco said it, then say the tool's summary (it names the affected tables and the customer offer).
-If Marco changes his mind ("no wait, fire 7 instead"), just do the new thing. If he goes off-topic, answer in one short line and get back to the board.
+If Marco changes his mind ("no wait, fire 7 instead of 4"), hold the old table and fire the new one. If he goes off-topic, answer in one short line and get back to the board.
 ```
 
 ## Tools (Webhook / server tools)
 
-All three: no auth header needed. Response is JSON; the agent should speak `summary`.
+All four: no auth header needed. Response is JSON; the agent should speak `summary`.
 
 ### get_board
 - Method: `GET`
@@ -42,6 +45,13 @@ All three: no auth header needed. Response is JSON; the agent should speak `summ
 - Description: `Mark a table's ticket as fired (cooking started). Use when Marco says "fire table N".`
 - Body parameters:
   - `table` (integer, required): `Table number Marco said`
+
+### hold_ticket
+- Method: `POST`
+- URL: `BASE/hold`
+- Description: `Undo a fire: put a fired table's ticket back on hold. Use when Marco changes his mind about a table he just fired.`
+- Body parameters:
+  - `table` (integer, required): `Table number to hold`
 
 ### eighty_six_item
 - Method: `POST`

@@ -140,6 +140,8 @@ $('#agent').value = params.get('agent') || store.get('expo-agent') || '';
 
 let convo = null, mode = 'listening', seen = null;
 const queue = [];
+// Test hook for headless runs: read-only view of the page's state.
+window.__expo = { get mode() { return mode; }, get connected() { return !!convo; }, get queued() { return queue.length; } };
 
 function log(who, text, cls = '') {
   const d = document.createElement('div');
@@ -187,7 +189,7 @@ $('#start').onclick = async () => {
     await navigator.mediaDevices.getUserMedia({ audio: true });
     convo = await Conversation.startSession({
       agentId,
-      connectionType: 'webrtc',
+      connectionType: params.get('conn') === 'websocket' ? 'websocket' : 'webrtc',
       onConnect: () => { $('#state').textContent = 'listening'; $('#state').className = 'on'; },
       onDisconnect: () => { convo = null; $('#state').textContent = 'not connected'; $('#state').className = ''; $('#start').textContent = 'Start Expo'; },
       onModeChange: (m) => { mode = m.mode; $('#state').textContent = m.mode; },
