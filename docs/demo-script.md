@@ -12,12 +12,12 @@ URLs are in `LIVE.md`.
 
 | Time | On screen | Say / do | Rubric beat |
 |---|---|---|---|
-| 0:00–0:15 | Kitchen board, tables 7, 2 and 9 under New (mic muted) | "Meet the Line Chef at a small burger spot. They're the only one in the kitchen tonight. Nobody reads the orders out to them, their hands are full, and every new order means stopping to look at a screen. CallOut reads the orders out for them." | Named user + problem |
+| 0:00–0:15 | Kitchen board, tables 7, 2 and 9 under To start (mic muted) | "Meet the Line Chef at a small burger spot. They're the only one in the kitchen tonight. Nobody reads the orders out to them, their hands are full, and every new order means stopping to look at a screen. CallOut reads the orders out for them." | Named user + problem |
 | 0:15–0:25 | Click **Start CallOut**. CallOut: "Hi, I'm CallOut. I'll call out new orders as they come in." | "CallOut is an ElevenLabs voice agent. Everything it manages (orders, the board, what's sold out) runs in a Daytona sandbox." | Uses Daytona |
 | 0:25–0:40 | Hold up your phone ("You're at table 10") and order a salmon burger with extra cheese and no pickles | "I'm a guest, ordering from my table." (stop talking) About a second later, without being asked, CallOut says: "New order, table 10: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
 | 0:40–0:55 | Board (unmute) | Line Chef: "What's on the board?" CallOut starts reading. Cut in: "Start cooking table 10." CallOut: "Starting table 10." The order moves to Cooking. Mute, then point at the transcript chips: "Those are real tool calls to the Daytona backend, timed live." | Interruption + real tool call, visible |
 | 0:55–1:05 | Board (unmute) | Line Chef: "No wait, start 7 instead of 10." CallOut: "Pausing table 10. Starting table 7." | Handles a change of mind |
-| 1:05–1:25 | Board | Line Chef: "We're out of salmon." CallOut: "Salmon burger is sold out. That affects tables 7, 9 and 10. Should I text them a free chicken sandwich swap and a free drink?" The three orders move to Needs attention and show "Waiting on chef". Line Chef: "Yes, send it." CallOut: "Texted tables 7, 9 and 10: a free swap to a chicken sandwich and a drink on us." | Finish line, with the chef deciding |
+| 1:05–1:25 | Board | Line Chef: "We're out of salmon." CallOut: "Salmon burger is sold out. That affects tables 7, 9 and 10. Should I text them a free chicken sandwich swap and a free drink?" The three orders get a red outline and "Waiting on chef's OK" right where they are. Line Chef: "Yes, send it." CallOut: "Texted tables 7, 9 and 10: a free swap to a chicken sandwich and a drink on us." The orders now show "Guest texted". | Finish line, with the chef deciding |
 | 1:25–1:35 | Phone close-up (mute) | The order page shows "An item is unavailable" with the free swap and a free drink. Tap **Check status**, type 10, and tap **Check** to see the same order and offer. "The guest sees it right away, and can check on their table at any time." | A real action reaches the customer |
 | 1:35–1:45 | Kitchen and phone side by side | "Every order read out loud, and one sentence plus a yes from the Line Chef took care of three tables. The chef stays in charge of what customers get." | Solves the problem |
 
@@ -60,7 +60,7 @@ All of these passed against the live agent.
 | Chef says no to the offer, or names another swap | "No" sends nothing; "offer the veggie burger" texts that swap; a sold-out swap gets refused and CallOut asks again | |
 | Judge asks how the guest knows | Tap Check status on the phone and type the table number | |
 | "Salmon is back" | "Salmon burger is back on the menu." Customers already texted keep their offer | |
-| "Table 2 is done" | "Table 2 is done." and the order leaves the board | Click Mark done |
+| "Table 2 is done" | "Table 2 is done." and the order moves to Done | Click Mark done |
 | "Start 7 and 9" | Starts both | One at a time |
 | "Undo that" right after a start | Pauses the last table it started | "Pause N." |
 | "Table 10 wants no cheese" | "The guest can change that on their phone." | |
