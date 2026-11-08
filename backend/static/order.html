@@ -2,104 +2,252 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Order</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f1e9">
+<title>Flat Top Burgers</title>
 <style>
-  :root { --bg:#faf7f2; --fg:#1c1917; --muted:#78716c; --card:#fff; --line:#e7e5e4; --accent:#c2410c; --ok:#15803d; --warn:#b91c1c; }
-  * { box-sizing:border-box; }
-  body { margin:0; font:16px/1.4 system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--fg); }
-  main { max-width:480px; margin:0 auto; padding:20px 16px 120px; }
-  h1 { margin:0 0 4px; font-size:28px; }
-  .sub { color:var(--muted); margin:0 0 16px; }
-  .item { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin:10px 0; }
-  .item.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
-  .item.out { opacity:.45; }
-  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
-  .name { font-weight:600; text-transform:capitalize; }
-  .mods { display:none; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  :root {
+    --bg:#f6f1e9; --fg:#1f1a17; --muted:#7a6f66; --card:#fffdf9; --line:#e8dfd3;
+    --accent:#d9480f; --accent-ink:#fff; --ok:#2b8a3e; --warn:#c92a2a; --warn-bg:#fff4f2;
+    --chip:#f1e9de; --shadow:0 1px 2px rgba(60,40,20,.06), 0 4px 16px rgba(60,40,20,.06);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { background:var(--bg); }
+  body { margin:0; font:16px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:480px; margin:0 auto; padding:20px 16px calc(120px + env(safe-area-inset-bottom)); }
+  button { font:inherit; color:inherit; border:0; background:none; cursor:pointer; }
+
+  /* header */
+  .top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .logo { width:40px; height:40px; border-radius:12px; background:var(--fg); color:#ffd8a8; display:grid; place-items:center; font-size:22px; }
+  .brand b { display:block; font-size:18px; letter-spacing:-.2px; }
+  .brand small { color:var(--muted); font-size:13px; }
+  .table-pill { position:relative; display:flex; align-items:center; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:600; font-size:15px; box-shadow:var(--shadow); }
+  .table-pill select { position:absolute; inset:0; opacity:0; font-size:16px; }
+  .table-pill .chev { color:var(--muted); font-size:12px; }
+
+  h1 { margin:4px 0 4px; font-size:30px; line-height:1.1; letter-spacing:-.6px; }
+  .sub { color:var(--muted); margin:0 0 18px; }
+
+  /* menu */
+  .item { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin:10px 0; box-shadow:var(--shadow); transition:border-color .15s, box-shadow .15s; }
+  .item.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset, var(--shadow); }
+  .item.out { opacity:.5; }
+  .row { display:flex; align-items:center; gap:12px; }
+  .emoji { width:52px; height:52px; flex:none; border-radius:12px; background:var(--chip); display:grid; place-items:center; font-size:28px; }
+  .info { flex:1; min-width:0; }
+  .name { font-weight:650; font-size:17px; text-transform:capitalize; }
+  .desc { color:var(--muted); font-size:14px; }
+  .out .desc { color:var(--warn); font-weight:600; }
+  .add { width:44px; height:44px; flex:none; border-radius:999px; background:var(--chip); font-size:24px; line-height:1; display:grid; place-items:center; transition:transform .15s, background .15s; }
+  .add:active { transform:scale(.92); }
+  .sel .add { background:var(--accent); color:var(--accent-ink); transform:rotate(45deg); }
+  .add:disabled { cursor:not-allowed; }
+  .mods { display:none; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
   .item.sel .mods { display:flex; }
-  .mods label { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:14px; }
-  .mods input { margin-right:4px; }
-  button { font:inherit; border:0; border-radius:10px; padding:10px 14px; cursor:pointer; }
-  .add { background:#f5f5f4; }
-  .sel .add { background:var(--accent); color:#fff; }
-  .bar { position:fixed; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--line); padding:12px 16px; }
-  .bar .in { max-width:480px; margin:0 auto; display:flex; gap:10px; align-items:center; }
-  select { font:inherit; padding:9px; border-radius:10px; border:1px solid var(--line); background:#fff; }
-  #go { flex:1; background:var(--fg); color:#fff; padding:14px; font-weight:600; }
-  #go:disabled { opacity:.4; }
+  .mods label { display:inline-flex; align-items:center; border:1px solid var(--line); background:var(--bg); border-radius:999px; padding:7px 12px; font-size:14px; cursor:pointer; user-select:none; }
+  .mods input { position:absolute; opacity:0; pointer-events:none; }
+  .mods label:has(input:checked) { background:var(--fg); border-color:var(--fg); color:#fff; }
+
+  /* bottom bar */
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:linear-gradient(to top, var(--bg) 70%, transparent); }
+  .bar .in { max-width:480px; margin:0 auto; }
+  #go { width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--fg); color:#fff; border-radius:16px; padding:17px 20px; font-weight:650; font-size:17px; box-shadow:0 8px 24px rgba(31,26,23,.25); transition:opacity .15s, transform .15s; }
+  #go:active { transform:scale(.98); }
+  #go:disabled { opacity:.35; box-shadow:none; }
+  #go .count { background:rgba(255,255,255,.16); border-radius:999px; padding:2px 10px; font-size:14px; }
+
+  /* status */
   #status { display:none; }
-  .big { font-size:22px; font-weight:700; margin:8px 0; }
-  .msg { background:#fef2f2; border:2px solid var(--warn); border-radius:12px; padding:16px; font-size:18px; margin-top:16px; }
-  .okc { color:var(--ok); }
+  .ticket { background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); overflow:hidden; }
+  .ticket-head { display:flex; justify-content:space-between; align-items:baseline; padding:16px 18px 12px; border-bottom:1px dashed var(--line); }
+  .ticket-head b { font-size:20px; }
+  .ticket-head span { color:var(--muted); font-size:14px; }
+  .ticket ul { list-style:none; margin:0; padding:10px 18px 16px; }
+  .ticket li { padding:6px 0; font-size:17px; font-weight:600; text-transform:capitalize; }
+  .ticket li small { display:block; color:var(--muted); font-weight:400; font-size:14px; text-transform:none; }
+  .ticket li.gone { color:var(--muted); }
+  .ticket li.gone span { text-decoration:line-through; text-decoration-color:var(--warn); text-decoration-thickness:2px; }
+  .ticket li .sub86 { display:inline-block; margin-left:6px; font-size:11px; font-weight:800; letter-spacing:.6px; color:#fff; background:var(--warn); border-radius:6px; padding:1px 6px; text-decoration:none; vertical-align:2px; text-transform:none; }
+
+  .steps { display:flex; gap:6px; margin:20px 0 8px; }
+  .step { flex:1; }
+  .step i { display:block; height:6px; border-radius:99px; background:var(--line); overflow:hidden; position:relative; }
+  .step.done i { background:var(--ok); }
+  .step.now i { background:var(--line); }
+  .step.now i::after { content:""; position:absolute; inset:0; width:40%; background:var(--accent); border-radius:99px; animation:slide 1.2s ease-in-out infinite; }
+  @keyframes slide { from { transform:translateX(-100%); } to { transform:translateX(250%); } }
+  .step span { display:block; margin-top:6px; font-size:12px; color:var(--muted); font-weight:600; }
+  .step.done span, .step.now span { color:var(--fg); }
+  .headline { font-size:26px; font-weight:750; letter-spacing:-.4px; margin:6px 0 4px; }
+  .headline.ok { color:var(--ok); }
+
+  .alert { display:none; position:relative; background:var(--warn-bg); border:2px solid var(--warn); border-radius:18px; padding:16px 16px 18px; margin:0 0 16px; box-shadow:0 10px 30px rgba(201,42,42,.18); animation:drop .5s cubic-bezier(.2,1.4,.4,1); }
+  .alert.show { display:block; }
+  @keyframes drop { from { transform:translateY(-16px) scale(.97); opacity:0; } to { transform:none; opacity:1; } }
+  .alert .from { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:750; text-transform:uppercase; letter-spacing:.8px; color:var(--warn); margin-bottom:8px; }
+  .alert .from .dot { width:8px; height:8px; border-radius:99px; background:var(--warn); animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.2; } }
+  .alert p { margin:0; font-size:19px; line-height:1.35; font-weight:550; }
+  .perks { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .perk { background:#fff; border:1px solid #f1c6c0; border-radius:999px; padding:6px 12px; font-size:14px; font-weight:650; }
+
+  .again { display:block; width:100%; margin-top:16px; padding:14px; border-radius:14px; border:1px solid var(--line); background:var(--card); font-weight:600; }
+  .err { color:var(--warn); font-weight:600; min-height:1.4em; margin:8px 0 0; }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body>
 <main>
+  <div class="top">
+    <div class="brand"><div class="logo">🍔</div><div><b>Flat Top Burgers</b><small>Order from your table</small></div></div>
+    <label class="table-pill"><span id="table-label">Table 4</span><span class="chev">▼</span>
+      <select id="table" aria-label="Table"></select></label>
+  </div>
+
   <section id="menu-view">
-    <h1>Order up</h1>
-    <p class="sub">Pick what you want. The kitchen hears it right away.</p>
+    <h1>What are you having?</h1>
+    <p class="sub">Tap to add. The kitchen hears your order the moment you send it.</p>
     <div id="menu"></div>
+    <p class="err" id="err"></p>
   </section>
+
   <section id="status">
-    <h1>Thanks!</h1>
-    <p class="big" id="st-line">Sent to the kitchen.</p>
-    <p class="sub" id="st-items"></p>
-    <div id="st-msg"></div>
+    <div class="alert" id="alert" role="alert">
+      <div class="from"><span class="dot"></span>Message from the kitchen</div>
+      <p id="alert-msg"></p>
+      <div class="perks" id="perks"></div>
+    </div>
+    <div class="headline" id="st-line">Sent to the kitchen</div>
+    <p class="sub" id="st-sub">The kitchen is calling it out now.</p>
+    <div class="steps" id="steps"></div>
+    <div class="ticket" style="margin-top:16px">
+      <div class="ticket-head"><b id="st-ticket">Ticket</b><span id="st-table"></span></div>
+      <ul id="st-items"></ul>
+    </div>
+    <button class="again" id="again">Order something else</button>
   </section>
 </main>
+
 <div class="bar" id="bar"><div class="in">
-  <select id="table" aria-label="Table">
-  </select>
-  <button id="go" disabled>Place order</button>
+  <button id="go" disabled><span>Send to kitchen</span><span class="count" id="count">0 items</span></button>
 </div></div>
+
 <script>
 const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const LOOK = {
+  'classic burger':   ['🍔', 'Smash patty, American cheese, house sauce'],
+  'salmon burger':    ['🐟', 'Seared salmon, dill slaw, lemon aioli'],
+  'veggie burger':    ['🌱', 'Black bean patty, avocado, pickled onion'],
+  'chicken sandwich': ['🍗', 'Crispy thigh, pickles, honey butter'],
+  'fries':            ['🍟', 'Hand-cut, sea salt'],
+};
 const tSel = $('#table');
 const qTable = new URLSearchParams(location.search).get('table') || '4';
 for (let i = 1; i <= 12; i++) tSel.add(new Option('Table ' + i, i, false, String(i) === qTable));
+const syncTable = () => { $('#table-label').textContent = 'Table ' + tSel.value; };
+tSel.onchange = syncTable; syncTable();
 const chosen = new Map();
+
+function updateBar() {
+  const n = chosen.size;
+  $('#go').disabled = n === 0;
+  $('#count').textContent = n + (n === 1 ? ' item' : ' items');
+}
 
 async function loadMenu() {
   const { items } = await (await fetch('menu')).json();
   $('#menu').innerHTML = '';
+  chosen.clear(); updateBar();
   for (const it of items) {
+    const [emoji, desc] = LOOK[it.name] || ['🍽️', ''];
     const el = document.createElement('div');
     el.className = 'item' + (it.sold_out ? ' out' : '');
-    el.innerHTML = `<div class="row"><span class="name">${it.name}</span>
-      <button class="add" ${it.sold_out ? 'disabled' : ''}>${it.sold_out ? 'Sold out' : 'Add'}</button></div>
-      <div class="mods">${it.mods.map(m => `<label><input type="checkbox" value="${m}">${m}</label>`).join('')}</div>`;
-    el.querySelector('.add').onclick = () => {
+    el.innerHTML = `<div class="row"><div class="emoji">${emoji}</div>
+      <div class="info"><div class="name">${esc(it.name)}</div><div class="desc">${it.sold_out ? 'Sold out tonight' : esc(desc)}</div></div>
+      <button class="add" aria-label="Add ${esc(it.name)}" ${it.sold_out ? 'disabled' : ''}>${it.sold_out ? '–' : '+'}</button></div>
+      <div class="mods">${it.mods.map(m => `<label><input type="checkbox" value="${esc(m)}">${esc(m)}</label>`).join('')}</div>`;
+    if (!it.sold_out) el.querySelector('.add').onclick = () => {
       if (chosen.has(it.name)) { chosen.delete(it.name); el.classList.remove('sel'); }
       else { chosen.set(it.name, el); el.classList.add('sel'); }
-      $('#go').disabled = chosen.size === 0;
+      updateBar();
     };
     $('#menu').append(el);
   }
 }
 
+let pollTimer = null, alerted = false, current = null;
+
 $('#go').onclick = async () => {
-  $('#go').disabled = true;
+  $('#go').disabled = true; $('#err').textContent = '';
   const items = [...chosen].map(([name, el]) => ({
     name, mods: [...el.querySelectorAll('input:checked')].map(i => i.value) }));
-  const r = await fetch('order', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ table: +tSel.value, items }) });
-  const d = await r.json();
-  if (!r.ok) { alert(d.detail || 'Could not place order'); $('#go').disabled = false; loadMenu(); return; }
-  $('#menu-view').style.display = 'none'; $('#bar').style.display = 'none'; $('#status').style.display = 'block';
-  $('#st-items').textContent = d.callout;
-  poll(d.id);
+  try {
+    const r = await fetch('order', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ table: +tSel.value, items }) });
+    const d = await r.json();
+    if (!r.ok) { $('#err').textContent = d.detail || 'Could not place order. Try again.'; loadMenu(); return; }
+    show('status');
+    alerted = false; current = null;
+    $('#alert').classList.remove('show');
+    $('#st-ticket').textContent = 'Ticket #' + d.id;
+    $('#st-table').textContent = 'Table ' + tSel.value;
+    poll(d.id);
+  } catch (e) {
+    $('#err').textContent = 'No connection. Try again.'; updateBar();
+  }
 };
+
+$('#again').onclick = () => { clearTimeout(pollTimer); show('menu'); loadMenu(); window.scrollTo(0, 0); };
+
+function show(view) {
+  const s = view === 'status';
+  $('#menu-view').style.display = s ? 'none' : '';
+  $('#bar').style.display = s ? 'none' : '';
+  $('#status').style.display = s ? 'block' : 'none';
+}
+
+const STEPS = ['Sent', 'Called out', 'Cooking'];
+function render(o) {
+  const msg = o.message || '';
+  const gone = msg ? (o.items.find(i => msg.includes(i.name)) || {}).name : null;
+  // Steps: new = called out by Expo, fired = cooking. Flagged pauses at "Called out".
+  const at = { new: 1, flagged: 1, fired: 2, done: 3 }[o.status] ?? 1;
+  $('#steps').innerHTML = STEPS.map((s, i) =>
+    `<div class="step ${i < at ? 'done' : i === at ? 'now' : ''}"><i></i><span>${s}</span></div>`).join('');
+  const head = {
+    new:     ['Sent to the kitchen', 'Your order was just called out on the line.'],
+    fired:   ['Cooking now 🔥', 'It’s on the grill. Hang tight.'],
+    flagged: ['Heads up from the kitchen', 'One item ran out. See the note above.'],
+    done:    ['Ready!', 'Coming out to your table.'],
+  }[o.status] || ['Sent to the kitchen', ''];
+  $('#st-line').textContent = head[0];
+  $('#st-line').className = 'headline' + (o.status === 'fired' || o.status === 'done' ? ' ok' : '');
+  $('#st-sub').textContent = head[1];
+  $('#st-items').innerHTML = o.items.map(i => {
+    const out = i.name === gone;
+    return `<li class="${out ? 'gone' : ''}"><span>${esc(i.name)}</span>${out ? '<em class="sub86">86’d</em>' : ''}${
+      i.mods.length ? `<small>${i.mods.map(esc).join(' · ')}</small>` : ''}</li>`;
+  }).join('');
+  if (msg) {
+    $('#alert-msg').textContent = msg;
+    const swap = (msg.match(/swap in an? ([a-z ]+?) at no charge/) || [])[1];
+    const comp = (msg.match(/and ([a-z ]+?) is on us/) || [])[1];
+    $('#perks').innerHTML = (swap ? `<span class="perk">🔁 Free swap: ${esc(swap)}</span>` : '') +
+      (comp ? `<span class="perk">🥤 ${esc(comp[0].toUpperCase() + comp.slice(1))} on us</span>` : '');
+    $('#alert').classList.add('show');
+    if (!alerted) { alerted = true; try { navigator.vibrate && navigator.vibrate([120, 80, 120]); } catch {} window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  }
+}
 
 async function poll(id) {
   try {
     const o = await (await fetch('order/' + id)).json();
-    const line = { new: 'Sent to the kitchen.', fired: 'Cooking now 🔥', flagged: 'Heads up from the kitchen', done: 'Ready!' }[o.status];
-    $('#st-line').textContent = line;
-    $('#st-line').className = 'big' + (o.status === 'fired' ? ' okc' : '');
-    $('#st-msg').innerHTML = o.message ? `<div class="msg">${o.message}</div>` : '';
+    if (o && o.items) render(o);
   } catch (e) {}
-  setTimeout(() => poll(id), 1500);
+  pollTimer = setTimeout(() => poll(id), 1500);
 }
 loadMenu();
 </script>
