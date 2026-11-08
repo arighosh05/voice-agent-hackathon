@@ -7,6 +7,11 @@ Run: uvicorn app:app --reload --port 8000  (expose with ngrok/cloudflared)
 import os
 import time
 
+import certifi
+
+# python.org macOS builds ship without root certs; use certifi's bundle.
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+
 from daytona import Daytona
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
