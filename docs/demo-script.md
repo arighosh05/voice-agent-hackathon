@@ -1,4 +1,4 @@
-# Callout: demo script, submission text, curveballs
+# CallOut: demo script, submission text, curveballs
 
 URLs are in `LIVE.md`.
 
@@ -10,40 +10,40 @@ URLs are in `LIVE.md`.
 
 | Time | On screen | Say / do | Rubric beat |
 |---|---|---|---|
-| 0:00–0:15 | Kitchen board, tables 7, 2 and 9 under New | "Meet the line chef at a small burger spot. They're the only one in the kitchen tonight. Nobody reads the orders out to them, their hands are full, and every new order means stopping to look at a screen. Callout reads the orders out for them." | Named user + problem |
-| 0:15–0:25 | Click **Start Callout**. Callout greets the kitchen and says it will call out new orders | "Callout is an ElevenLabs voice agent. Everything it manages (orders, the board, what's sold out) runs in a Daytona sandbox." | Uses Daytona |
-| 0:25–0:40 | Press **Q** to show the Guest ordering QR code. The phone scans it and orders a salmon burger with extra cheese and no pickles | (stop talking) About a second later, without being asked, Callout says: "New order, table 4: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
-| 0:40–0:55 | Board | Line chef: "What's on the board?" Callout starts reading. The line chef cuts in: "Start cooking table 4." Callout: "Starting table 4." The order moves to Cooking. Point at the transcript chips, which show each tool call with its timing: "Those are real tool calls to the Daytona backend, timed live." | Interruption + real tool call, visible |
-| 0:55–1:05 | Board | Line chef: "No wait, start 7 instead of 4." Callout: "Pausing table 4. Starting table 7." | Handles a change of mind |
-| 1:05–1:20 | Board, then a close-up of the phone | Line chef: "We're out of salmon." Callout: "Salmon burger is sold out. That affects tables 4, 7 and 9. I've texted them a free swap to a chicken sandwich and a drink on us." Those orders move to Needs attention and show "Guest texted", and the Sold out count goes up. The phone shows "An item is unavailable" with the free swap and a free drink. | Finish line: a real action reaches the customer |
-| 1:20–1:30 | Kitchen and phone side by side | "Every order read out loud, and one sentence from the line chef took care of three tables and three customers without him touching a screen." | Solves the problem |
+| 0:00–0:15 | Kitchen board, tables 7, 2 and 9 under New | "Meet the Line Chef at a small burger spot. They're the only one in the kitchen tonight. Nobody reads the orders out to them, their hands are full, and every new order means stopping to look at a screen. CallOut reads the orders out for them." | Named user + problem |
+| 0:15–0:25 | Click **Start CallOut**. CallOut: "Hi, I'm CallOut. I'll call out new orders as they come in." | "CallOut is an ElevenLabs voice agent. Everything it manages (orders, the board, what's sold out) runs in a Daytona sandbox." | Uses Daytona |
+| 0:25–0:40 | Press **Q** to show the Guest ordering QR code. The phone scans it and orders a salmon burger with extra cheese and no pickles | (stop talking) About a second later, without being asked, CallOut says: "New order, table 4: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
+| 0:40–0:55 | Board | Line Chef: "What's on the board?" CallOut starts reading. The Line Chef cuts in: "Start cooking table 4." CallOut: "Starting table 4." The order moves to Cooking. Point at the transcript chips, which show each tool call with its timing: "Those are real tool calls to the Daytona backend, timed live." | Interruption + real tool call, visible |
+| 0:55–1:05 | Board | Line Chef: "No wait, start 7 instead of 4." CallOut: "Pausing table 4. Starting table 7." | Handles a change of mind |
+| 1:05–1:20 | Board, then a close-up of the phone | Line Chef: "We're out of salmon." CallOut: "Salmon burger is sold out. That affects tables 4, 7 and 9. I've texted them a free swap to a chicken sandwich and a drink on us." Those orders move to Needs attention and show "Guest texted", and the Sold out count goes up. The phone shows "An item is unavailable" with the free swap and a free drink. | Finish line: a real action reaches the customer |
+| 1:20–1:30 | Kitchen and phone side by side | "Every order read out loud, and one sentence from the Line Chef took care of three tables and three customers without him touching a screen." | Solves the problem |
 
-Notes: keep the mic close and pause after each line so the reply comes back within about 1.5s. Orders placed before you click Start are still read out once Callout connects. If an order isn't read out, ask "What's on the board?" and keep going. Older kitchen slang ("fire", "86") still works, but plain words read better on stage.
+Notes: keep the mic close and pause after each line so the reply comes back within about 1.5s. Orders placed before you click Start are still read out once CallOut connects. If an order isn't read out, ask "What's on the board?" and keep going. Older kitchen slang ("fire", "86") still works, but plain words read better on stage.
 
 ## 2. Submission text
 
-**Name:** Callout, a voice assistant for short-staffed kitchens
+**Name:** CallOut, a voice assistant for short-staffed kitchens
 **Track:** 01 Local Business
 
-**User:** The line chef at a small burger spot, working the kitchen alone. Nobody reads the orders out to them, and their hands are always full.
+**User:** The Line Chef at a small burger spot, working the kitchen alone. Nobody reads the orders out to them, and their hands are always full.
 
-**Finish line:** Every order is read out loud the moment it lands. When the line chef says "we're out of salmon", every affected order is flagged and those customers get a message on their phone offering a free swap and a free drink.
+**Finish line:** Every order is read out loud the moment it lands. When the Line Chef says "we're out of salmon", every affected order is flagged and those customers get a message on their phone offering a free swap and a free drink.
 
-**What it does:** A customer orders from their phone, and about a second later Callout reads the order out in the kitchen without being asked. The line chef runs the kitchen by voice: "what's on the board", "start cooking table 4", "no wait, start 7 instead", "we're out of salmon", "table 2 is done". When something sells out, Callout marks it sold out, flags each open order that has it, and texts those customers an apology with a free swap and a free drink.
+**What it does:** A customer orders from their phone, and about a second later CallOut reads the order out in the kitchen without being asked. The Line Chef runs the kitchen by voice: "what's on the board", "start cooking table 4", "no wait, start 7 instead", "we're out of salmon", "table 2 is done". When something sells out, CallOut marks it sold out, flags each open order that has it, and texts those customers an apology with a free swap and a free drink.
 
-**How we used ElevenLabs:** A Conversational AI agent with a short, plain-spoken prompt. It uses Claude Haiku 4.5 as the LLM and Flash TTS for low latency, keeps interruptions on, and turns the silence timeout off so it never asks "still there?" during a busy service. Its webhook tools (board, start, pause, sold out, back on the menu, done) change real kitchen state, and the kitchen transcript shows each tool call with its latency. The kitchen page uses the web SDK and pushes each new order into the live session, so Callout speaks without being asked. Measured: orders are read out about 1.1s after they're placed, and replies come about 1.2s after the line chef stops talking.
+**How we used ElevenLabs:** A Conversational AI agent with a short, plain-spoken prompt. It uses Claude Haiku 4.5 as the LLM and Flash TTS for low latency, keeps interruptions on, and turns the silence timeout off so it never asks "still there?" during a busy service. Its webhook tools (board, start, pause, sold out, back on the menu, done) change real kitchen state, and the kitchen transcript shows each tool call with its latency. The kitchen page uses the web SDK and pushes each new order into the live session, so CallOut speaks without being asked. Measured: orders are read out about 1.1s after they're placed, and replies come about 1.2s after the Line Chef stops talking.
 
-**How we used Daytona:** The whole kitchen backend runs in a public Daytona sandbox: FastAPI, orders and the board, what's sold out, matching an item to its orders, customer messages, and both pages. The agent's tools, the kitchen page and the customer's phone all talk to that sandbox URL. We also used Daytona sandboxes to test ourselves, with a headless kitchen page where a synthetic line-chef voice talks to the real agent.
+**How we used Daytona:** The whole kitchen backend runs in a public Daytona sandbox: FastAPI, orders and the board, what's sold out, matching an item to its orders, customer messages, and both pages. The agent's tools, the kitchen page and the customer's phone all talk to that sandbox URL. We also used Daytona sandboxes to test ourselves, with a headless kitchen page where a synthetic Line Chef voice talks to the real agent.
 
 ## 3. Curveballs to rehearse
 
 All of these passed against the live agent.
 
-| Judge does | Callout should | If it doesn't |
+| Judge does | CallOut should | If it doesn't |
 |---|---|---|
-| Orders before you click Start | The order is read out about 0.6s after Callout connects | Ask "What's on the board?" |
+| Orders before you click Start | The order is read out about 0.6s after CallOut connects | Ask "What's on the board?" |
 | Two orders land at once | Reads both out in turn, without talking over itself | "What's on the board?" |
-| Talks over Callout mid-sentence ("start table four") | Stops and starts table 4 within about 0.7s | Repeat the line |
+| Talks over CallOut mid-sentence ("start table four") | Stops and starts table 4 within about 0.7s | Repeat the line |
 | "No wait, start 7 instead of 4" | "Pausing table 4. Starting table 7." | "Pause 4." then "Start 7." |
 | "Start table 12" (no such order) | Says there's no open order for table 12 | Nothing needed, that's correct |
 | "What does table 5 have?" | Checks the board and answers from it (never from memory) | |
@@ -59,8 +59,8 @@ All of these passed against the live agent.
 | "Table 4 wants no cheese" | "The guest can change that on their phone." | |
 | Chatty line ("the salmon's selling great") | Doesn't mark anything sold out | |
 | Off-topic ("what's the weather?", "tell me a joke") | One friendly line, then back to the board. It doesn't assume who is speaking | Move to the next beat |
-| Asks "is this scripted?" | Let the judge talk to Callout themselves, or place their own order | |
+| Asks "is this scripted?" | Let the judge talk to CallOut themselves, or place their own order | |
 | Long silence | Stays quiet and never asks "still there?" | |
-| Wifi drops or Callout goes silent | Reload the kitchen page and click Start Callout again | Order from a second laptop tab |
+| Wifi drops or CallOut goes silent | Reload the kitchen page and click Start CallOut again | Order from a second laptop tab |
 | Judge's phone shows a Daytona warning after scanning | Tap Continue (only once), and the order page loads | Order from your phone instead |
 | Sandbox is slow on the first load | Load the kitchen page once before you go on | Wait a beat, then ask again |
