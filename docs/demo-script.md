@@ -2,7 +2,7 @@
 
 URLs are in `LIVE.md`.
 
-**Once before the demo (it lasts 24h):** open the kitchen URL on the laptop and the order URL on your phone, and click through Daytona's one-time preview warning on each. Judges who scan the QR code will see it too and tap Continue once.
+**Once before the demo (it lasts 24h):** open the kitchen URL on the laptop and the order URL on your phone, and click through Daytona's one-time preview warning on each. If a judge wants to order themselves, press **Q** for the QR code; they'll see the warning once and tap Continue.
 
 **Before every run:** click **Reset** on the kitchen page (the board goes back to tables 7, 2 and 9, with nothing sold out). Load the kitchen page once to warm up the sandbox, and have the order page open on your phone (`BASE/?table=4`). For a projector or the Loom, add `&stage` to the kitchen URL (or press **S**) to get bigger type.
 
@@ -12,7 +12,7 @@ URLs are in `LIVE.md`.
 |---|---|---|---|
 | 0:00–0:15 | Kitchen board, tables 7, 2 and 9 under New | "Meet the Line Chef at a small burger spot. They're the only one in the kitchen tonight. Nobody reads the orders out to them, their hands are full, and every new order means stopping to look at a screen. CallOut reads the orders out for them." | Named user + problem |
 | 0:15–0:25 | Click **Start CallOut**. CallOut: "Hi, I'm CallOut. I'll call out new orders as they come in." | "CallOut is an ElevenLabs voice agent. Everything it manages (orders, the board, what's sold out) runs in a Daytona sandbox." | Uses Daytona |
-| 0:25–0:40 | Press **Q** to show the Guest ordering QR code. The phone scans it and orders a salmon burger with extra cheese and no pickles | (stop talking) About a second later, without being asked, CallOut says: "New order, table 4: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
+| 0:25–0:40 | Hold up your phone (order page already open) and order a salmon burger with extra cheese and no pickles: "I'm the guest at table 4." | (stop talking) About a second later, without being asked, CallOut says: "New order, table 4: salmon burger, extra cheese, hold the pickles." | Works live: speaks on its own |
 | 0:40–0:55 | Board | Line Chef: "What's on the board?" CallOut starts reading. The Line Chef cuts in: "Start cooking table 4." CallOut: "Starting table 4." The order moves to Cooking. Point at the transcript chips, which show each tool call with its timing: "Those are real tool calls to the Daytona backend, timed live." | Interruption + real tool call, visible |
 | 0:55–1:05 | Board | Line Chef: "No wait, start 7 instead of 4." CallOut: "Pausing table 4. Starting table 7." | Handles a change of mind |
 | 1:05–1:20 | Board, then a close-up of the phone | Line Chef: "We're out of salmon." CallOut: "Salmon burger is sold out. That affects tables 4, 7 and 9. I've texted them a free swap to a chicken sandwich and a drink on us." Those orders move to Needs attention and show "Guest texted", and the Sold out count goes up. The phone shows "An item is unavailable" with the free swap and a free drink. | Finish line: a real action reaches the customer |
